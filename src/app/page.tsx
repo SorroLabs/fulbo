@@ -32,7 +32,7 @@ export default function LandingPage() {
       </header>
 
       <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_hsl(var(--primary)/0.08)_0%,_transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,oklch(0.769_0.188_65/0.12)_0%,transparent_70%)]" />
         <div className="relative z-10 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
             ⚽ Mundial 2026 — ¡Ya disponible!
