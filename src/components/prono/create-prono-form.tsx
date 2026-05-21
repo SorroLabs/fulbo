@@ -14,10 +14,9 @@ import { toast } from "sonner"
 
 interface Props {
   competitions: { id: string; name: string; season: string; status: string }[]
-  userId: string
 }
 
-export function CreatePronoForm({ competitions, userId }: Props) {
+export function CreatePronoForm({ competitions }: Props) {
   const router = useRouter()
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -29,7 +28,7 @@ export function CreatePronoForm({ competitions, userId }: Props) {
     e.preventDefault()
     if (!name.trim() || !competitionId) return
     startTransition(async () => {
-      const res = await createProno({ userId, competitionId, name, description, isPublic })
+      const res = await createProno({ competitionId, name, description, isPublic })
       if (res.error) toast.error(res.error)
       else {
         toast.success("¡Prono creada!")

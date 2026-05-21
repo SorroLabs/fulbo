@@ -11,16 +11,15 @@ import { joinPronoByCode } from "@/app/actions/pronos"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-export function JoinPronoDialog({ userId }: { userId: string | null }) {
+export function JoinPronoDialog() {
   const [open, setOpen] = useState(false)
   const [code, setCode] = useState("")
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   function handleJoin() {
-    if (!userId) { toast.error("Iniciá sesión para unirte a un prono"); return }
     startTransition(async () => {
-      const res = await joinPronoByCode({ userId, code })
+      const res = await joinPronoByCode({ code })
       if (res.error) toast.error(res.error)
       else {
         toast.success("¡Te uniste a el prono!")

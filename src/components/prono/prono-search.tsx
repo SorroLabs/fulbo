@@ -15,10 +15,9 @@ import Link from "next/link"
 interface Props {
   pronos: any[]
   myPollaIds: string[]
-  userId: string | null
 }
 
-export function PronoSearch({ pronos, myPollaIds: initialMyIds, userId }: Props) {
+export function PronoSearch({ pronos, myPollaIds: initialMyIds }: Props) {
   const [query, setQuery] = useState("")
   const [myIds, setMyIds] = useState(new Set(initialMyIds))
   const [isPending, startTransition] = useTransition()
@@ -31,10 +30,9 @@ export function PronoSearch({ pronos, myPollaIds: initialMyIds, userId }: Props)
   )
 
   function handleJoin(pronoId: string) {
-    if (!userId) { toast.error("Iniciá sesión para unirte"); return }
     setJoiningId(pronoId)
     startTransition(async () => {
-      const res = await joinProno({ userId, pronoId })
+      const res = await joinProno({ pronoId })
       if (res.error) toast.error(res.error)
       else {
         toast.success("¡Te uniste a el prono!")

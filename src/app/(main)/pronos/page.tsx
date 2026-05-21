@@ -37,7 +37,7 @@ export default async function PollasPage() {
           <p className="text-muted-foreground">Creá o unite a un prono para competir</p>
         </div>
         <div className="flex gap-3">
-          <JoinPronoDialog userId={user?.id ?? null} />
+          <JoinPronoDialog />
           <Link href="/pronos/nueva" className={cn(buttonVariants(), "rounded-full gap-2")}>
             <Plus className="h-4 w-4" /> Nuevo prono
           </Link>
@@ -81,7 +81,7 @@ export default async function PollasPage() {
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <Globe className="h-5 w-5 text-primary" /> Pronos públicos
         </h2>
-        <PronoSearch pronos={publicPronos ?? []} myPollaIds={[...myPollaIds]} userId={user?.id ?? null} />
+        <PronoSearch pronos={publicPronos ?? []} myPollaIds={[...myPollaIds]} />
       </section>
     </div>
   )
