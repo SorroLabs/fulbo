@@ -29,6 +29,7 @@ export async function getLiveFixtures(leagueId: number) {
 export function mapApiFixtureToMatch(fixture: any, competitionId: string) {
   const phaseMap: Record<string, string> = {
     "Group Stage": "groups",
+    "Round of 32": "round_of_32",
     "Round of 16": "round_of_16",
     "Quarter-finals": "quarterfinals",
     "Semi-finals": "semifinals",

@@ -35,7 +35,7 @@ export interface Match {
   home_score: number | null
   away_score: number | null
   match_date: string
-  phase: "groups" | "round_of_16" | "quarterfinals" | "semifinals" | "final" | "third_place"
+  phase: "groups" | "round_of_32" | "round_of_16" | "quarterfinals" | "semifinals" | "final" | "third_place"
   group_name: string | null
   status: "upcoming" | "live" | "finished"
   created_at: string
@@ -151,6 +151,7 @@ export interface Duel {
 
 export type PhaseMultiplier = {
   groups: { exact: number; result: number }
+  round_of_32: { exact: number; result: number }
   round_of_16: { exact: number; result: number }
   quarterfinals: { exact: number; result: number }
   semifinals: { exact: number; result: number }
@@ -160,11 +161,12 @@ export type PhaseMultiplier = {
 
 export const PHASE_MULTIPLIERS: PhaseMultiplier = {
   groups: { exact: 3, result: 1 },
-  round_of_16: { exact: 5, result: 2 },
-  quarterfinals: { exact: 5, result: 2 },
-  semifinals: { exact: 8, result: 3 },
-  final: { exact: 8, result: 3 },
-  third_place: { exact: 5, result: 2 },
+  round_of_32: { exact: 5, result: 2 },
+  round_of_16: { exact: 6, result: 2 },
+  quarterfinals: { exact: 8, result: 3 },
+  semifinals: { exact: 10, result: 4 },
+  final: { exact: 16, result: 6 },
+  third_place: { exact: 8, result: 3 },
 }
 
 export const SPECIAL_PREDICTION_POINTS = {

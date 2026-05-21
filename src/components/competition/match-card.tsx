@@ -60,7 +60,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
         {/* Phase + date */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs text-muted-foreground">
-            {new Date(match.match_date).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+            {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "short" })}
           </span>
           <div className="flex items-center gap-2">
             {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}

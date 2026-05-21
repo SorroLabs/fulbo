@@ -52,8 +52,8 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
   }, {})
 
   const PHASE_LABELS: Record<string, string> = {
-    groups: "Grupos", round_of_16: "Octavos", quarterfinals: "Cuartos",
-    semifinals: "Semis", third_place: "3° puesto", final: "Final",
+    groups: "Grupos", round_of_32: "Ronda 32", round_of_16: "Octavos",
+    quarterfinals: "Cuartos", semifinals: "Semis", third_place: "3° puesto", final: "Final",
   }
 
   return (
