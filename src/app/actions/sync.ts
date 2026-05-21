@@ -26,13 +26,16 @@ export async function syncMatches() {
   if (!competitions?.length) return { synced: 0 }
 
   let synced = 0
+  const debug: any[] = []
 
   for (const comp of competitions) {
     try {
       const liveFixtures = comp.status === "active" ? await getLiveFixtures(comp.api_league_id) : []
-      const fixturesToProcess = liveFixtures.length > 0
+      const allFixtures = liveFixtures.length > 0
         ? liveFixtures
         : await getFixtures(comp.api_league_id, parseInt(comp.season))
+      const fixturesToProcess = allFixtures
+      debug.push({ comp: comp.id, league: comp.api_league_id, season: comp.season, fixtures: fixturesToProcess.length })
 
       for (const fixture of fixturesToProcess) {
         const matchData = mapApiFixtureToMatch(fixture, comp.id)
@@ -55,10 +58,10 @@ export async function syncMatches() {
         }
         synced++
       }
-    } catch (err) {
-      console.error(`Error syncing competition ${comp.id}:`, err)
+    } catch (err: any) {
+      debug.push({ comp: comp.id, error: err?.message ?? String(err) })
     }
   }
 
-  return { synced }
+  return { synced, debug }
 }
