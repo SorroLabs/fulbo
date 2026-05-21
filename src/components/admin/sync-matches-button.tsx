@@ -14,8 +14,8 @@ export function SyncMatchesButton() {
     const res = await syncMatches()
     if ("error" in res) toast.error(res.error)
     else {
-      toast.success(`Sincronizados ${res.synced} partidos`)
-      if (res.debug) console.log("Sync debug:", JSON.stringify(res.debug, null, 2))
+      const debugInfo = res.debug ? JSON.stringify(res.debug) : "sin debug"
+      toast.success(`Sincronizados: ${res.synced} | ${debugInfo}`, { duration: 10000 })
     }
     setLoading(false)
   }
