@@ -18,7 +18,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
   const [{ data: prono }, { data: members }] = await Promise.all([
     supabase
       .from("pronos")
-      .select("*, competitions(*), profiles!pollas_owner_id_fkey(*)")
+      .select("*, competitions(*)")
       .eq("id", id)
       .single(),
     supabase
