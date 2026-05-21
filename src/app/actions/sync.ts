@@ -4,6 +4,26 @@ import { createClient as createServerClient } from "@/lib/supabase/server"
 import { createClient } from "@supabase/supabase-js"
 import { getFixtures, getLiveFixtures, mapApiFixtureToMatch } from "@/lib/api-football"
 
+export async function testApiFootball(leagueId: number, season: number) {
+  const supabaseAuth = await createServerClient()
+  const { data: { user } } = await supabaseAuth.auth.getUser()
+  if (!user) return { error: "No autenticado" }
+  const { data: profile } = await supabaseAuth.from("profiles").select("role").eq("id", user.id).single()
+  if (profile?.role !== "admin") return { error: "Sin permisos" }
+
+  const res = await fetch(
+    `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}`,
+    { headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY! } }
+  )
+  const data = await res.json()
+  return {
+    status: res.status,
+    errors: data.errors,
+    results: data.results,
+    firstFixture: data.response?.[0] ?? null,
+  }
+}
+
 export async function syncMatches() {
   const supabaseAuth = await createServerClient()
   const { data: { user } } = await supabaseAuth.auth.getUser()
