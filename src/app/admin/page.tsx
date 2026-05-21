@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ShieldCheck, Users, Trophy, Coins } from "lucide-react"
 import { ParticipantsAdmin } from "@/components/admin/participants-admin"
 import { CompetitionsAdmin } from "@/components/admin/competitions-admin"
+import { SyncMatchesButton } from "@/components/admin/sync-matches-button"
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -26,12 +27,15 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <ShieldCheck className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-black">Panel de administración</h1>
-          <p className="text-muted-foreground">Gestioná competiciones e inscripciones</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <ShieldCheck className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-black">Panel de administración</h1>
+            <p className="text-muted-foreground">Gestioná competiciones e inscripciones</p>
+          </div>
         </div>
+        <SyncMatchesButton />
       </div>
 
       {/* Quick stats */}
