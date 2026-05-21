@@ -19,7 +19,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("pronos")
       .select("*, competitions(*)")
-      .eq("id", id)
+      .eq("invite_code", id.toUpperCase())
       .single(),
     supabase
       .from("prono_members")
@@ -48,7 +48,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           <p className="text-muted-foreground">{(prono as any).competitions?.name} · {(prono as any).competitions?.season}</p>
         </div>
         {(isMember || isOwner) && (
-          <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} pronoId={id} />
+          <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} />
         )}
       </div>
 

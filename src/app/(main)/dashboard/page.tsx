@@ -96,7 +96,7 @@ export default async function DashboardPage() {
         {myPronos && myPronos.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {myPronos.map((pm: any) => (
-              <Link key={pm.prono_id} href={`/pronos/${pm.prono_id}`}>
+              <Link key={pm.prono_id} href={`/pronos/${pm.pronos?.invite_code}`}>
                 <Card className="hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group">
                   <CardContent className="pt-5">
                     <div className="flex items-center justify-between">

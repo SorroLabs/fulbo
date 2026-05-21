@@ -52,7 +52,7 @@ export default async function PollasPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {myPronos!.map((pm: any) => (
-              <Link key={pm.prono_id} href={`/pronos/${pm.prono_id}`}>
+              <Link key={pm.prono_id} href={`/pronos/${pm.pronos?.invite_code}`}>
                 <Card className="hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group h-full">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">

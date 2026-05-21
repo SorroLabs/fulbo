@@ -82,7 +82,7 @@ export function PronoSearch({ pronos, myPollaIds: initialMyIds }: Props) {
                     {prono.prono_members?.[0]?.count ?? 0} / {prono.max_members}
                   </span>
                   {isMember ? (
-                    <Link href={`/pronos/${prono.id}`} className={cn(buttonVariants({ size: "sm", variant: "outline" }), "rounded-full h-8 gap-1.5 text-xs")}>
+                    <Link href={`/pronos/${prono.invite_code}`} className={cn(buttonVariants({ size: "sm", variant: "outline" }), "rounded-full h-8 gap-1.5 text-xs")}>
                       <CheckCircle className="h-3.5 w-3.5 text-primary" /> Ver prono
                     </Link>
                   ) : (

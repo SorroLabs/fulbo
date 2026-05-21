@@ -32,7 +32,7 @@ export function CreatePronoForm({ competitions }: Props) {
       if (res.error) toast.error(res.error)
       else {
         toast.success("¡Prono creada!")
-        router.push(`/pronos/${res.data!.id}`)
+        router.push(`/pronos/${res.data!.invite_code}`)
       }
     })
   }
