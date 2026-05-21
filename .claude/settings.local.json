@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npx create-next-app@latest *)",
+      "Bash(npm install *)",
+      "Bash(npx shadcn@latest *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(xargs sed -i -e s/polla_members/prono_members/g -e s/polla_id/prono_id/g -e s/coins_in_polla/coins_in_prono/g -e s/joinPolla/joinProno/g -e s/createPolla/createProno/g -e s/joinPollaByCode/joinPronoByCode/g -e s/PollaSearch/PronoSearch/g -e s/PollaInvite/PronoInvite/g -e s/JoinPollaDialog/JoinPronoDialog/g -e s/CreatePollaForm/CreatePronoForm/g -e s/PollaMember/PronoMember/g -e s/pollaId/pronoId/g -e 's/\"pollas\"/\"pronos\"/g' -e 's/'\\\\''pollas'\\\\''/'\\\\''pronos'\\\\''/g' -e 's/\\\\/pollas/\\\\/pronos/g' -e 's/Mis pollas/Mis pronos/g' -e 's/Mi polla/Mi prono/g' -e 's/Nueva polla/Nuevo prono/g' -e 's/nueva polla/nuevo prono/g' -e 's/la polla/el prono/g' -e 's/La polla/El prono/g' -e 's/una polla/un prono/g' -e 's/Una polla/Un prono/g' -e 's/tu polla/tu prono/g' -e 's/Tu polla/Tu prono/g' -e 's/la Polla/el Prono/g' -e 's/pollas públicas/pronos públicos/g' -e 's/Pollas públicas/Pronos públicos/g' -e 's/polla pública/prono público/g' -e 's/pollas privadas/pronos privados/g' -e 's/polla privada/prono privado/g' -e 's/Polla\\\\b/Prono/g' -e 's/Pollas\\\\b/Pronos/g' -e 's/\\\\bpolla\\\\b/prono/g' -e 's/\\\\bpollas\\\\b/pronos/g')",
+      "Bash(xargs sed -i -e 's|components/polla/|components/prono/|g' -e 's|actions/pollas|actions/pronos|g' -e 's|polla-invite|prono-invite|g' -e 's|polla-search|prono-search|g' -e 's|join-polla-dialog|join-prono-dialog|g' -e 's|create-polla-form|create-prono-form|g')",
+      "Bash(xargs sed -i -e 's/Prono no encontrada/Prono no encontrado/g' -e 's/El prono está llena/El prono está lleno/g' -e 's/Ya sos miembro de esta prono/Ya sos miembro de este prono/g' -e 's/Error al unirse a el prono/Error al unirse al prono/g')",
+      "Bash(sed -i -e s/pollas/pronos/g -e s/polla_members/prono_members/g -e s/polla_id/prono_id/g -e s/coins_in_polla/coins_in_prono/g /home/sorro/fulbo/src/lib/supabase/schema.sql)",
+      "Bash(curl -s \"https://artxrdzsviicadizivllp.supabase.co/rest/v1/?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFydHhyZHpzdmlpY2Fkeml2bGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNjYwNDMsImV4cCI6MjA5NDk0MjA0M30.589ialdekLV7rsZAWonU8MIDeGroJ93CVZE3Xd68_kk\")",
+      "Bash(curl *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)"
+    ]
+  }
+}

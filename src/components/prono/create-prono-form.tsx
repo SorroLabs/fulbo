@@ -1,0 +1,122 @@
+"use client"
+
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { Globe, Lock } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { createProno } from "@/app/actions/pronos"
+import { toast } from "sonner"
+
+interface Props {
+  competitions: { id: string; name: string; season: string; status: string }[]
+  userId: string
+}
+
+export function CreatePronoForm({ competitions, userId }: Props) {
+  const router = useRouter()
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+  const [competitionId, setCompetitionId] = useState(competitions[0]?.id ?? "")
+  const [isPublic, setIsPublic] = useState(true)
+  const [isPending, startTransition] = useTransition()
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!name.trim() || !competitionId) return
+    startTransition(async () => {
+      const res = await createProno({ userId, competitionId, name, description, isPublic })
+      if (res.error) toast.error(res.error)
+      else {
+        toast.success("¡Prono creada!")
+        router.push(`/pronos/${res.data!.id}`)
+      }
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Card>
+        <CardContent className="pt-6 space-y-5">
+          <div className="space-y-2">
+            <Label>Nombre de el prono *</Label>
+            <Input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Ej: Los pibes del laburo"
+              className="rounded-xl"
+              maxLength={60}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Descripción <span className="text-muted-foreground">(opcional)</span></Label>
+            <Input
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Ej: Solo para la familia..."
+              className="rounded-xl"
+              maxLength={120}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Competición *</Label>
+            <select
+              value={competitionId}
+              onChange={e => setCompetitionId(e.target.value)}
+              className="w-full h-10 px-3 rounded-xl border border-input bg-background text-sm"
+              required
+            >
+              {competitions.map(c => (
+                <option key={c.id} value={c.id}>{c.name} — {c.season}</option>
+              ))}
+            </select>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label>Visibilidad</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: true, label: "Pública", desc: "Cualquiera puede encontrarla y unirse", Icon: Globe },
+                { value: false, label: "Privada", desc: "Solo por link o código QR", Icon: Lock },
+              ].map(({ value, label, desc, Icon }) => (
+                <button
+                  key={String(value)}
+                  type="button"
+                  onClick={() => setIsPublic(value)}
+                  className={cn(
+                    "flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-all",
+                    isPublic === value
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-border/80"
+                  )}
+                >
+                  <span className="flex items-center gap-2 font-semibold text-sm">
+                    <Icon className="h-4 w-4" /> {label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Button
+        type="submit"
+        disabled={isPending || !name.trim() || !competitionId}
+        className="w-full h-12 rounded-xl text-base font-bold"
+      >
+        {isPending ? "Creando..." : "Crear prono"}
+      </Button>
+    </form>
+  )
+}
