@@ -23,7 +23,7 @@ export async function createProno({
     .select()
     .single()
 
-  if (error) return { error: "Error al crear el prono" }
+  if (error) return { error: error.message }
 
   // Auto-join creator
   await supabase.from("prono_members").insert({ prono_id: data.id, user_id: userId })
