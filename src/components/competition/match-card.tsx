@@ -7,9 +7,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { PHASE_MULTIPLIERS } from "@/types"
+import { getTeamFlag } from "@/lib/team-flags"
 import { savePrediction } from "@/app/actions/predictions"
 import { toast } from "sonner"
 import type { Match, Prediction } from "@/types"
+
+function TeamFlag({ name, logo }: { name: string; logo: string | null }) {
+  const src = logo || getTeamFlag(name)
+  if (!src) return <div className="w-10 h-10 rounded-full bg-muted" />
+  return (
+    <img
+      src={src}
+      alt={name}
+      className="w-10 h-7 object-cover rounded shadow-sm"
+      style={{ aspectRatio: "4/3" }}
+    />
+  )
+}
 
 interface MatchCardProps {
   match: Match
@@ -74,7 +88,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
         <div className="flex items-center gap-3">
           {/* Home */}
           <div className="flex-1 flex flex-col items-center gap-2">
-            {match.home_team_logo && <img src={match.home_team_logo} alt="" className="w-8 h-8 object-contain" />}
+            <TeamFlag name={match.home_team} logo={match.home_team_logo} />
             <span className="text-sm font-semibold text-center leading-tight">{match.home_team}</span>
           </div>
 
@@ -113,7 +127,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
 
           {/* Away */}
           <div className="flex-1 flex flex-col items-center gap-2">
-            {match.away_team_logo && <img src={match.away_team_logo} alt="" className="w-8 h-8 object-contain" />}
+            <TeamFlag name={match.away_team} logo={match.away_team_logo} />
             <span className="text-sm font-semibold text-center leading-tight">{match.away_team}</span>
           </div>
         </div>
