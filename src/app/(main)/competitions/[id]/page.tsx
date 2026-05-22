@@ -18,7 +18,9 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
 
   const [{ data: competition }, { data: matches }, { data: userPredictions }, { data: specialPreds }] = await Promise.all([
     supabase.from("competitions").select("*").eq("id", id).single(),
-    supabase.from("matches").select("*").eq("competition_id", id).order("match_date"),
+    supabase.from("matches").select("*").eq("competition_id", id)
+      .not("home_team", "like", "Ganador%")
+      .order("match_date"),
     user ? supabase.from("predictions").select("*").eq("user_id", user.id).eq("competition_id", id) : { data: [] },
     user ? supabase.from("special_predictions").select("*").eq("user_id", user.id).eq("competition_id", id) : { data: [] },
   ])
