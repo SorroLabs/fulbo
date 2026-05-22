@@ -15,18 +15,19 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: prono }, { data: members }] = await Promise.all([
-    supabase
-      .from("pronos")
-      .select("*, competitions(*)")
-      .eq("invite_code", id.toUpperCase())
-      .single(),
-    supabase
-      .from("prono_members")
-      .select("*, profiles(*)")
-      .eq("prono_id", id)
-      .order("total_points", { ascending: false }),
-  ])
+  const { data: prono } = await supabase
+    .from("pronos")
+    .select("*, competitions(*)")
+    .eq("invite_code", id.toUpperCase())
+    .single()
+
+  const { data: members } = prono
+    ? await supabase
+        .from("prono_members")
+        .select("*, profiles(*)")
+        .eq("prono_id", prono.id)
+        .order("total_points", { ascending: false })
+    : { data: null }
 
   if (!prono) notFound()
 
@@ -150,9 +151,12 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-center">
+      <div className="flex flex-col sm:flex-row justify-center gap-3">
+        <Link href={`/competitions/${prono.competition_id}`} className={cn(buttonVariants(), "rounded-full font-bold")}>
+          Hacer predicciones
+        </Link>
         <Link href={`/competitions/${prono.competition_id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
-          <Trophy className="mr-2 h-4 w-4" /> Ver ranking global de la competición
+          <Trophy className="mr-2 h-4 w-4" /> Ranking global
         </Link>
       </div>
     </div>

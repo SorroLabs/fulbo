@@ -35,13 +35,14 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
 
   const PHASE_LABELS: Record<string, string> = {
     groups: "Fase de grupos",
+    round_of_32: "Ronda de 32",
     round_of_16: "Octavos de final",
     quarterfinals: "Cuartos de final",
     semifinals: "Semifinales",
     third_place: "Tercer puesto",
     final: "Final",
   }
-  const PHASE_ORDER = ["groups", "round_of_16", "quarterfinals", "semifinals", "third_place", "final"]
+  const PHASE_ORDER = ["groups", "round_of_32", "round_of_16", "quarterfinals", "semifinals", "third_place", "final"]
 
   const totalMatches = matches?.length ?? 0
   const predictedCount = userPredictions?.length ?? 0

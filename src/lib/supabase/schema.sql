@@ -42,7 +42,7 @@ create table public.matches (
   home_score integer,
   away_score integer,
   match_date timestamptz not null,
-  phase text not null default 'groups' check (phase in ('groups', 'round_of_16', 'quarterfinals', 'semifinals', 'final', 'third_place')),
+  phase text not null default 'groups' check (phase in ('groups', 'round_of_32', 'round_of_16', 'quarterfinals', 'semifinals', 'final', 'third_place')),
   group_name text,
   status text not null default 'upcoming' check (status in ('upcoming', 'live', 'finished')),
   created_at timestamptz default now()
