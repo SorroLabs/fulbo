@@ -6,6 +6,8 @@ import { ShieldCheck, Users, Trophy, Coins } from "lucide-react"
 import { ParticipantsAdmin } from "@/components/admin/participants-admin"
 import { CompetitionsAdmin } from "@/components/admin/competitions-admin"
 import { SyncMatchesButton } from "@/components/admin/sync-matches-button"
+import { MatchesAdmin } from "@/components/admin/matches-admin"
+import type { Match } from "@/types"
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -15,7 +17,7 @@ export default async function AdminPage() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   if (profile?.role !== "admin") redirect("/dashboard")
 
-  const [{ data: pendingParticipants }, { data: competitions }, { data: stats }] = await Promise.all([
+  const [{ data: pendingParticipants }, { data: competitions }, { data: stats }, { data: matches }] = await Promise.all([
     supabase
       .from("competition_participants")
       .select("*, profiles(*), competitions(name)")
@@ -23,6 +25,7 @@ export default async function AdminPage() {
       .order("created_at"),
     supabase.from("competitions").select("*").order("start_date", { ascending: false }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("matches").select("*").order("match_date"),
   ])
 
   return (
@@ -60,8 +63,11 @@ export default async function AdminPage() {
         ))}
       </div>
 
-      <Tabs defaultValue="participants">
+      <Tabs defaultValue="matches">
         <TabsList className="rounded-full">
+          <TabsTrigger value="matches" className="rounded-full gap-2">
+            Partidos
+          </TabsTrigger>
           <TabsTrigger value="participants" className="rounded-full gap-2">
             <Users className="h-4 w-4" /> Inscripciones
             {(pendingParticipants?.length ?? 0) > 0 && (
@@ -74,6 +80,10 @@ export default async function AdminPage() {
             <Trophy className="h-4 w-4" /> Competiciones
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="matches" className="mt-6">
+          <MatchesAdmin matches={(matches ?? []) as Match[]} />
+        </TabsContent>
 
         <TabsContent value="participants" className="mt-6">
           <ParticipantsAdmin participants={pendingParticipants ?? []} adminId={user.id} />
