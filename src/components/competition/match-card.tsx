@@ -38,7 +38,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
 
   const isLocked = match.status !== "upcoming" || !userId
   const deadline = new Date(match.match_date)
-  deadline.setMinutes(deadline.getMinutes() - 10)
+  deadline.setMinutes(deadline.getMinutes() - 20)
   const isPastDeadline = new Date() > deadline
 
   const pts = PHASE_MULTIPLIERS[match.phase]

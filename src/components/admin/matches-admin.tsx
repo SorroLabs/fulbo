@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { reportMatchResult } from "@/app/actions/matches"
+import { reportMatchResult, createTestMatch, deleteTestMatches } from "@/app/actions/matches"
 import { toast } from "sonner"
+import { FlaskConical, Trash2 } from "lucide-react"
 import type { Match } from "@/types"
 
 const PHASE_LABELS: Record<string, string> = {
@@ -22,6 +23,7 @@ const PHASE_ORDER = ["groups", "round_of_32", "round_of_16", "quarterfinals", "s
 
 interface Props {
   matches: Match[]
+  competitionId: string
 }
 
 function MatchRow({ match }: { match: Match }) {
@@ -87,8 +89,26 @@ function MatchRow({ match }: { match: Match }) {
   )
 }
 
-export function MatchesAdmin({ matches }: Props) {
+export function MatchesAdmin({ matches, competitionId }: Props) {
   const [filter, setFilter] = useState<"all" | "upcoming" | "finished">("upcoming")
+  const [isCreating, startCreating] = useTransition()
+  const [isDeleting, startDeleting] = useTransition()
+
+  function handleCreateTest(minutesFromNow: number) {
+    startCreating(async () => {
+      const res = await createTestMatch({ competitionId, minutesFromNow })
+      if (res.error) toast.error(res.error)
+      else toast.success(`Partido de prueba creado — empieza en ${minutesFromNow} min`)
+    })
+  }
+
+  function handleDeleteTests() {
+    startDeleting(async () => {
+      const res = await deleteTestMatches({ competitionId })
+      if (res.error) toast.error(res.error)
+      else toast.success("Partidos de prueba eliminados")
+    })
+  }
 
   const filtered = matches.filter(m =>
     filter === "all" ? true : m.status === filter
@@ -102,6 +122,24 @@ export function MatchesAdmin({ matches }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Test controls */}
+      <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-xl border border-dashed border-border">
+        <FlaskConical className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="text-xs text-muted-foreground font-medium mr-1">Partido de prueba (España vs Argentina):</span>
+        {[25, 5, 1].map(min => (
+          <Button key={min} size="sm" variant="outline" disabled={isCreating}
+            onClick={() => handleCreateTest(min)}
+            className="rounded-full text-xs h-7 px-3">
+            en {min} min
+          </Button>
+        ))}
+        <Button size="sm" variant="outline" disabled={isDeleting}
+          onClick={handleDeleteTests}
+          className="rounded-full text-xs h-7 px-3 text-destructive border-destructive/30 hover:bg-destructive/10 ml-auto">
+          <Trash2 className="h-3 w-3 mr-1" /> Borrar pruebas
+        </Button>
+      </div>
+
       <div className="flex gap-2">
         {(["upcoming", "finished", "all"] as const).map(f => (
           <Button
