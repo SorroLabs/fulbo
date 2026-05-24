@@ -80,11 +80,11 @@ export function Navbar({ profile }: NavbarProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          {/* Coins display */}
+          {/* Coins link */}
           {profile && (
             <Link href="/coins" className="hidden md:flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary rounded-full px-3 py-1 text-sm font-semibold hover:bg-primary/20 transition-colors">
               <Coins className="h-3.5 w-3.5" />
-              {profile.coins.toLocaleString()}
+              Monedas
             </Link>
           )}
 
@@ -101,12 +101,14 @@ export function Navbar({ profile }: NavbarProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
                 <div className="px-3 py-2">
-                  <p className="font-semibold text-sm truncate">{profile.full_name ?? "Usuario"}</p>
+                  <p className="font-semibold text-sm truncate">
+                    {profile.nickname ? `@${profile.nickname}` : (profile.full_name ?? "Usuario")}
+                  </p>
                   <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <Link href="/perfil" className="cursor-pointer flex items-center w-full">
+                  <Link href="/settings" className="cursor-pointer flex items-center w-full">
                     <User className="mr-2 h-4 w-4" /> Mi perfil
                   </Link>
                 </DropdownMenuItem>

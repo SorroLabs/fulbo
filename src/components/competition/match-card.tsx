@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { PHASE_MULTIPLIERS } from "@/types"
 import { getTeamFlag } from "@/lib/team-flags"
@@ -96,22 +95,22 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
               </div>
             ) : (
               <div className="flex items-center gap-1.5">
-                <Input
+                <input
                   type="number" min={0} max={20} value={home}
                   onChange={e => { setHome(e.target.value); setSaved(false) }}
                   onBlur={handleBlur}
                   disabled={!canEdit}
-                  className="w-12 h-12 text-lg font-black p-0 rounded-xl"
-                  style={{ textAlign: "center" }}
+                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-transparent outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                  style={{ textAlign: "center", padding: 0 }}
                 />
                 <span className="text-muted-foreground font-bold">-</span>
-                <Input
+                <input
                   type="number" min={0} max={20} value={away}
                   onChange={e => { setAway(e.target.value); setSaved(false) }}
                   onBlur={handleBlur}
                   disabled={!canEdit}
-                  className="w-12 h-12 text-lg font-black p-0 rounded-xl"
-                  style={{ textAlign: "center" }}
+                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-transparent outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                  style={{ textAlign: "center", padding: 0 }}
                 />
               </div>
             )}

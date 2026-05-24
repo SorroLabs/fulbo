@@ -4,7 +4,6 @@ import { useState, useTransition } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Trophy, FlaskConical, Trash2, RefreshCw, Bug } from "lucide-react"
 import { reportMatchResult, revertMatchResult, createTestMatch, deleteTestMatches } from "@/app/actions/matches"
 import { syncMatches, testApiFootball } from "@/app/actions/sync"
@@ -86,15 +85,17 @@ function MatchRow({ match }: { match: Match }) {
 
       {showInputs ? (
         <div className="flex items-center gap-2">
-          <Input type="number" min={0} max={20} value={home}
+          <input type="number" min={0} max={20} value={home}
             onChange={e => setHome(e.target.value)}
-            className="w-12 h-8 p-0 text-sm font-bold" placeholder="0"
-            style={{ textAlign: "center" }} />
+            placeholder="0"
+            className="w-12 h-8 text-sm font-bold rounded-lg border border-input bg-transparent outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+            style={{ textAlign: "center", padding: 0 }} />
           <span className="text-muted-foreground font-bold">-</span>
-          <Input type="number" min={0} max={20} value={away}
+          <input type="number" min={0} max={20} value={away}
             onChange={e => setAway(e.target.value)}
-            className="w-12 h-8 p-0 text-sm font-bold" placeholder="0"
-            style={{ textAlign: "center" }} />
+            placeholder="0"
+            className="w-12 h-8 text-sm font-bold rounded-lg border border-input bg-transparent outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+            style={{ textAlign: "center", padding: 0 }} />
           <Button size="sm" onClick={handleSubmit}
             disabled={isPending || home === "" || away === ""}
             className="h-8 px-3 text-xs font-bold rounded-full">

@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { Navbar } from "@/components/layout/navbar"
+import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import type { Profile } from "@/types"
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
@@ -10,6 +12,13 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   if (user) {
     const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single()
     profile = data
+  }
+
+  // Force profile setup if no nickname
+  if (user && profile && !profile.nickname) {
+    const headersList = await headers()
+    const pathname = headersList.get("x-invoke-path") ?? headersList.get("x-pathname") ?? ""
+    if (!pathname.startsWith("/settings")) redirect("/settings?setup=1")
   }
 
   return (

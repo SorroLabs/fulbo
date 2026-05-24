@@ -4,7 +4,9 @@ export interface Profile {
   id: string
   email: string
   full_name: string | null
+  nickname: string | null
   avatar_url: string | null
+  timezone: string
   role: UserRole
   coins: number
   created_at: string
