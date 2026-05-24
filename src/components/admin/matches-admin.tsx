@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Trophy, FlaskConical, Trash2, RefreshCw, Bug } from "lucide-react"
 import { reportMatchResult, revertMatchResult, createTestMatch, deleteTestMatches } from "@/app/actions/matches"
 import { syncMatches, testApiFootball } from "@/app/actions/sync"
+import { getTeamFlag } from "@/lib/team-flags"
 import { toast } from "sonner"
 import type { Match, Competition } from "@/types"
 
@@ -69,7 +70,13 @@ function MatchRow({ match }: { match: Match }) {
   return (
     <div className="flex items-center gap-3 py-3 border-b border-border/50 last:border-0">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate">{match.home_team} vs {match.away_team}</p>
+        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+          {getTeamFlag(match.home_team) && <img src={getTeamFlag(match.home_team)!} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />}
+          <span className="text-sm font-semibold">{match.home_team}</span>
+          <span className="text-muted-foreground text-xs">vs</span>
+          {getTeamFlag(match.away_team) && <img src={getTeamFlag(match.away_team)!} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />}
+          <span className="text-sm font-semibold">{match.away_team}</span>
+        </div>
         <p className="text-xs text-muted-foreground">
           {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
           {match.group_name && match.group_name !== "TEST" && ` · ${match.group_name}`}
