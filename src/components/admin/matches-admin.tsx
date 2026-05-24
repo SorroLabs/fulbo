@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trophy, FlaskConical, Trash2, RefreshCw, Bug } from "lucide-react"
-import { reportMatchResult, createTestMatch, deleteTestMatches } from "@/app/actions/matches"
+import { reportMatchResult, revertMatchResult, createTestMatch, deleteTestMatches } from "@/app/actions/matches"
 import { syncMatches, testApiFootball } from "@/app/actions/sync"
 import { toast } from "sonner"
 import type { Match, Competition } from "@/types"
@@ -27,6 +27,7 @@ function MatchRow({ match }: { match: Match }) {
   const [away, setAway] = useState(match.away_score?.toString() ?? "")
   const [editing, setEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [isReverting, startReverting] = useTransition()
 
   const handleSubmit = () => {
     if (home === "" || away === "") return
@@ -39,6 +40,19 @@ function MatchRow({ match }: { match: Match }) {
       if (res.error) toast.error(res.error)
       else {
         toast.success(`${match.home_team} ${home}-${away} ${match.away_team}`)
+        setEditing(false)
+      }
+    })
+  }
+
+  const handleRevert = () => {
+    startReverting(async () => {
+      const res = await revertMatchResult({ matchId: match.id })
+      if (res.error) toast.error(res.error)
+      else {
+        toast.success("Resultado revertido — partido vuelve a Próximo")
+        setHome("")
+        setAway("")
         setEditing(false)
       }
     })
@@ -80,11 +94,19 @@ function MatchRow({ match }: { match: Match }) {
             {isPending ? "..." : "Guardar"}
           </Button>
           {editing && (
-            <Button size="sm" variant="ghost" onClick={handleCancel}
-              disabled={isPending}
-              className="h-8 px-2 text-xs rounded-full text-muted-foreground">
-              Cancelar
-            </Button>
+            <>
+              <Button size="sm" variant="ghost" onClick={handleCancel}
+                disabled={isPending || isReverting}
+                className="h-8 px-2 text-xs rounded-full text-muted-foreground">
+                Cancelar
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleRevert}
+                disabled={isPending || isReverting}
+                className="h-8 px-2 text-xs rounded-full text-destructive hover:bg-destructive/10"
+                title="Revertir a sin jugar">
+                {isReverting ? "..." : "— x —"}
+              </Button>
+            </>
           )}
         </div>
       ) : (
