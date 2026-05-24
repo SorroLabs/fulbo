@@ -28,7 +28,9 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
   if (!competition) notFound()
 
   const teams = Array.from(new Set(
-    (matches as Match[] | null)?.flatMap(m => [m.home_team, m.away_team]) ?? []
+    (matches as Match[] | null)
+      ?.filter(m => m.phase === "groups")
+      .flatMap(m => [m.home_team, m.away_team]) ?? []
   )).sort((a, b) => a.localeCompare(b, "es"))
 
   const matchesByPhase = (matches as Match[] | null)?.reduce((acc, m) => {
