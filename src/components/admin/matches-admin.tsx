@@ -24,6 +24,7 @@ const PHASE_ORDER = ["groups", "round_of_32", "round_of_16", "quarterfinals", "s
 function MatchRow({ match }: { match: Match }) {
   const [home, setHome] = useState(match.home_score?.toString() ?? "")
   const [away, setAway] = useState(match.away_score?.toString() ?? "")
+  const [editing, setEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const handleSubmit = () => {
@@ -35,9 +36,20 @@ function MatchRow({ match }: { match: Match }) {
         awayScore: parseInt(away),
       })
       if (res.error) toast.error(res.error)
-      else toast.success(`${match.home_team} ${home}-${away} ${match.away_team}`)
+      else {
+        toast.success(`${match.home_team} ${home}-${away} ${match.away_team}`)
+        setEditing(false)
+      }
     })
   }
+
+  const handleCancel = () => {
+    setHome(match.home_score?.toString() ?? "")
+    setAway(match.away_score?.toString() ?? "")
+    setEditing(false)
+  }
+
+  const showInputs = match.status !== "finished" || editing
 
   return (
     <div className="flex items-center gap-3 py-3 border-b border-border/50 last:border-0">
@@ -50,14 +62,7 @@ function MatchRow({ match }: { match: Match }) {
         </p>
       </div>
 
-      {match.status === "finished" ? (
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="font-black text-sm px-3">
-            {match.home_score} - {match.away_score}
-          </Badge>
-          <Badge variant="secondary" className="text-xs">Finalizado</Badge>
-        </div>
-      ) : (
+      {showInputs ? (
         <div className="flex items-center gap-2">
           <Input type="number" min={0} max={20} value={home}
             onChange={e => setHome(e.target.value)}
@@ -70,6 +75,23 @@ function MatchRow({ match }: { match: Match }) {
             disabled={isPending || home === "" || away === ""}
             className="h-8 px-3 text-xs font-bold rounded-full">
             {isPending ? "..." : "Guardar"}
+          </Button>
+          {editing && (
+            <Button size="sm" variant="ghost" onClick={handleCancel}
+              disabled={isPending}
+              className="h-8 px-2 text-xs rounded-full text-muted-foreground">
+              Cancelar
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="font-black text-sm px-3">
+            {match.home_score} - {match.away_score}
+          </Badge>
+          <Button size="sm" variant="ghost" onClick={() => setEditing(true)}
+            className="h-7 px-2 text-xs rounded-full text-muted-foreground hover:text-foreground">
+            Editar
           </Button>
         </div>
       )}
