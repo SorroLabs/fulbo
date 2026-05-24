@@ -24,7 +24,7 @@ export async function testApiFootball(leagueId: number, season: number) {
   }
 }
 
-export async function syncMatches() {
+export async function syncMatches(competitionId?: string) {
   const supabaseAuth = await createServerClient()
   const { data: { user } } = await supabaseAuth.auth.getUser()
   if (!user) return { error: "No autenticado" }
@@ -37,11 +37,15 @@ export async function syncMatches() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data: competitions } = await supabase
+  let query = supabase
     .from("competitions")
     .select("id, api_league_id, season, status")
     .in("status", ["upcoming", "active"])
     .not("api_league_id", "is", null)
+
+  if (competitionId) query = query.eq("id", competitionId)
+
+  const { data: competitions } = await query
 
   if (!competitions?.length) return { synced: 0 }
 

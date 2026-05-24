@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Trophy, FlaskConical, Trash2 } from "lucide-react"
+import { Trophy, FlaskConical, Trash2, RefreshCw, Bug } from "lucide-react"
 import { reportMatchResult, createTestMatch, deleteTestMatches } from "@/app/actions/matches"
+import { syncMatches, testApiFootball } from "@/app/actions/sync"
 import { toast } from "sonner"
 import type { Match, Competition } from "@/types"
 
@@ -109,6 +110,8 @@ export function MatchesAdmin({ competitions, allMatches }: Props) {
   const [filter, setFilter] = useState<"upcoming" | "finished" | "all">("upcoming")
   const [isCreating, startCreating] = useTransition()
   const [isDeleting, startDeleting] = useTransition()
+  const [isSyncing, startSyncing] = useTransition()
+  const [isTesting, startTesting] = useTransition()
 
   const competition = competitions.find(c => c.id === selectedId)
 
@@ -130,6 +133,25 @@ export function MatchesAdmin({ competitions, allMatches }: Props) {
       const res = await createTestMatch({ competitionId: selectedId, minutesFromNow })
       if (res.error) toast.error(res.error)
       else toast.success(`Partido de prueba en ${minutesFromNow} min creado`)
+    })
+  }
+
+  function handleSync() {
+    startSyncing(async () => {
+      const res = await syncMatches(selectedId)
+      if ("error" in res) toast.error(res.error)
+      else toast.success(`Sincronizados: ${res.synced} partidos`, { duration: 5000 })
+    })
+  }
+
+  function handleTest() {
+    if (!competition?.api_league_id) {
+      toast.error("Esta competición no tiene league ID configurado")
+      return
+    }
+    startTesting(async () => {
+      const res = await testApiFootball(competition.api_league_id!, parseInt(competition.season))
+      toast.info(JSON.stringify(res), { duration: 15000 })
     })
   }
 
@@ -177,13 +199,28 @@ export function MatchesAdmin({ competitions, allMatches }: Props) {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-        <span><span className="font-bold text-foreground">{matchesForComp.length}</span> partidos totales</span>
-        <span>·</span>
-        <span><span className="font-bold text-amber-500">{upcomingCount}</span> próximos</span>
-        <span>·</span>
-        <span><span className="font-bold text-emerald-500">{finishedCount}</span> finalizados</span>
+      {/* Stats + sync row */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-1">
+          <span><span className="font-bold text-foreground">{matchesForComp.length}</span> totales</span>
+          <span>·</span>
+          <span><span className="font-bold text-amber-500">{upcomingCount}</span> próximos</span>
+          <span>·</span>
+          <span><span className="font-bold text-emerald-500">{finishedCount}</span> finalizados</span>
+        </div>
+        {competition?.api_league_id && (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleSync} disabled={isSyncing}
+              className="rounded-full gap-2 text-xs">
+              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Sincronizando..." : "Sync API"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleTest} disabled={isTesting}
+              className="rounded-full text-xs px-2" title="Test API Football">
+              <Bug className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Status filter */}
