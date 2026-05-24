@@ -5,10 +5,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Trophy, FlaskConical, Trash2 } from "lucide-react"
 import { reportMatchResult, createTestMatch, deleteTestMatches } from "@/app/actions/matches"
 import { toast } from "sonner"
-import { FlaskConical, Trash2 } from "lucide-react"
-import type { Match } from "@/types"
+import type { Match, Competition } from "@/types"
 
 const PHASE_LABELS: Record<string, string> = {
   groups: "Fase de grupos",
@@ -20,11 +20,6 @@ const PHASE_LABELS: Record<string, string> = {
   final: "Final",
 }
 const PHASE_ORDER = ["groups", "round_of_32", "round_of_16", "quarterfinals", "semifinals", "third_place", "final"]
-
-interface Props {
-  matches: Match[]
-  competitionId: string
-}
 
 function MatchRow({ match }: { match: Match }) {
   const [home, setHome] = useState(match.home_score?.toString() ?? "")
@@ -40,7 +35,7 @@ function MatchRow({ match }: { match: Match }) {
         awayScore: parseInt(away),
       })
       if (res.error) toast.error(res.error)
-      else toast.success(`Resultado guardado: ${match.home_team} ${home}-${away} ${match.away_team}`)
+      else toast.success(`${match.home_team} ${home}-${away} ${match.away_team}`)
     })
   }
 
@@ -50,7 +45,8 @@ function MatchRow({ match }: { match: Match }) {
         <p className="text-sm font-semibold truncate">{match.home_team} vs {match.away_team}</p>
         <p className="text-xs text-muted-foreground">
           {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-          {match.group_name && ` · ${match.group_name}`}
+          {match.group_name && match.group_name !== "TEST" && ` · ${match.group_name}`}
+          {match.group_name === "TEST" && <span className="text-yellow-500 font-bold"> · TEST</span>}
         </p>
       </div>
 
@@ -63,24 +59,16 @@ function MatchRow({ match }: { match: Match }) {
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <Input
-            type="number" min={0} max={20} value={home}
+          <Input type="number" min={0} max={20} value={home}
             onChange={e => setHome(e.target.value)}
-            className="w-12 h-8 text-center p-0 text-sm font-bold"
-            placeholder="0"
-          />
+            className="w-12 h-8 text-center p-0 text-sm font-bold" placeholder="0" />
           <span className="text-muted-foreground font-bold">-</span>
-          <Input
-            type="number" min={0} max={20} value={away}
+          <Input type="number" min={0} max={20} value={away}
             onChange={e => setAway(e.target.value)}
-            className="w-12 h-8 text-center p-0 text-sm font-bold"
-            placeholder="0"
-          />
-          <Button
-            size="sm" onClick={handleSubmit}
+            className="w-12 h-8 text-center p-0 text-sm font-bold" placeholder="0" />
+          <Button size="sm" onClick={handleSubmit}
             disabled={isPending || home === "" || away === ""}
-            className="h-8 px-3 text-xs font-bold rounded-full"
-          >
+            className="h-8 px-3 text-xs font-bold rounded-full">
             {isPending ? "..." : "Guardar"}
           </Button>
         </div>
@@ -89,75 +77,110 @@ function MatchRow({ match }: { match: Match }) {
   )
 }
 
-export function MatchesAdmin({ matches, competitionId }: Props) {
-  const [filter, setFilter] = useState<"all" | "upcoming" | "finished">("upcoming")
+interface Props {
+  competitions: Competition[]
+  allMatches: Match[]
+}
+
+export function MatchesAdmin({ competitions, allMatches }: Props) {
+  const [selectedId, setSelectedId] = useState(competitions[0]?.id ?? "")
+  const [filter, setFilter] = useState<"upcoming" | "finished" | "all">("upcoming")
   const [isCreating, startCreating] = useTransition()
   const [isDeleting, startDeleting] = useTransition()
 
+  const competition = competitions.find(c => c.id === selectedId)
+
+  const matchesForComp = allMatches.filter(m => m.competition_id === selectedId)
+  const filtered = matchesForComp.filter(m =>
+    filter === "all" ? true : m.status === filter
+  )
+  const byPhase = PHASE_ORDER.reduce((acc, phase) => {
+    const ms = filtered.filter(m => m.phase === phase)
+    if (ms.length) acc[phase] = ms
+    return acc
+  }, {} as Record<string, Match[]>)
+
+  const upcomingCount = matchesForComp.filter(m => m.status === "upcoming").length
+  const finishedCount = matchesForComp.filter(m => m.status === "finished").length
+
   function handleCreateTest(minutesFromNow: number) {
     startCreating(async () => {
-      const res = await createTestMatch({ competitionId, minutesFromNow })
+      const res = await createTestMatch({ competitionId: selectedId, minutesFromNow })
       if (res.error) toast.error(res.error)
-      else toast.success(`Partido de prueba creado — empieza en ${minutesFromNow} min`)
+      else toast.success(`Partido de prueba en ${minutesFromNow} min creado`)
     })
   }
 
   function handleDeleteTests() {
     startDeleting(async () => {
-      const res = await deleteTestMatches({ competitionId })
+      const res = await deleteTestMatches({ competitionId: selectedId })
       if (res.error) toast.error(res.error)
       else toast.success("Partidos de prueba eliminados")
     })
   }
 
-  const filtered = matches.filter(m =>
-    filter === "all" ? true : m.status === filter
-  )
-
-  const byPhase = PHASE_ORDER.reduce((acc, phase) => {
-    const phaseMatches = filtered.filter(m => m.phase === phase)
-    if (phaseMatches.length) acc[phase] = phaseMatches
-    return acc
-  }, {} as Record<string, Match[]>)
+  if (!competitions.length) {
+    return <p className="text-center text-muted-foreground py-10">No hay competiciones creadas.</p>
+  }
 
   return (
     <div className="space-y-6">
-      {/* Test controls */}
-      <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-xl border border-dashed border-border">
-        <FlaskConical className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span className="text-xs text-muted-foreground font-medium mr-1">Partido de prueba (España vs Argentina):</span>
-        {[25, 5, 1].map(min => (
-          <Button key={min} size="sm" variant="outline" disabled={isCreating}
-            onClick={() => handleCreateTest(min)}
-            className="rounded-full text-xs h-7 px-3">
-            en {min} min
-          </Button>
-        ))}
-        <Button size="sm" variant="outline" disabled={isDeleting}
-          onClick={handleDeleteTests}
-          className="rounded-full text-xs h-7 px-3 text-destructive border-destructive/30 hover:bg-destructive/10 ml-auto">
-          <Trash2 className="h-3 w-3 mr-1" /> Borrar pruebas
-        </Button>
+      {/* Competition selector */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Competición</p>
+        <div className="flex flex-wrap gap-2">
+          {competitions.map(comp => {
+            const isActive = comp.id === selectedId
+            return (
+              <button
+                key={comp.id}
+                onClick={() => { setSelectedId(comp.id); setFilter("upcoming") }}
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                {comp.logo_url
+                  ? <img src={comp.logo_url} alt="" className="w-5 h-5 object-contain" />
+                  : <Trophy className={`h-4 w-4 ${isActive ? "text-primary-foreground" : "text-primary"}`} />
+                }
+                <span>{comp.name}</span>
+                <span className={`text-xs font-normal ${isActive ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                  {comp.season}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
+      {/* Stats row */}
+      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <span><span className="font-bold text-foreground">{matchesForComp.length}</span> partidos totales</span>
+        <span>·</span>
+        <span><span className="font-bold text-amber-500">{upcomingCount}</span> próximos</span>
+        <span>·</span>
+        <span><span className="font-bold text-emerald-500">{finishedCount}</span> finalizados</span>
+      </div>
+
+      {/* Status filter */}
       <div className="flex gap-2">
         {(["upcoming", "finished", "all"] as const).map(f => (
-          <Button
-            key={f}
-            size="sm"
+          <Button key={f} size="sm"
             variant={filter === f ? "default" : "outline"}
             onClick={() => setFilter(f)}
-            className="rounded-full text-xs"
-          >
+            className="rounded-full text-xs">
             {f === "upcoming" ? "Próximos" : f === "finished" ? "Finalizados" : "Todos"}
           </Button>
         ))}
       </div>
 
+      {/* Match list */}
       {Object.entries(byPhase).map(([phase, phaseMatches]) => (
         <div key={phase}>
           <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wide mb-2">
-            {PHASE_LABELS[phase]}
+            {PHASE_LABELS[phase] ?? phase}
           </h3>
           <Card>
             <CardContent className="pt-2 pb-2">
@@ -170,6 +193,26 @@ export function MatchesAdmin({ matches, competitionId }: Props) {
       {!Object.keys(byPhase).length && (
         <p className="text-center text-muted-foreground py-10">No hay partidos en esta categoría.</p>
       )}
+
+      {/* Test controls */}
+      <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-xl border border-dashed border-border">
+        <FlaskConical className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="text-xs text-muted-foreground font-medium">
+          Test en <span className="text-foreground font-semibold">{competition?.name}</span>:
+        </span>
+        {[25, 5, 1].map(min => (
+          <Button key={min} size="sm" variant="outline" disabled={isCreating}
+            onClick={() => handleCreateTest(min)}
+            className="rounded-full text-xs h-7 px-3">
+            en {min} min
+          </Button>
+        ))}
+        <Button size="sm" variant="outline" disabled={isDeleting}
+          onClick={handleDeleteTests}
+          className="rounded-full text-xs h-7 px-3 text-destructive border-destructive/30 hover:bg-destructive/10 ml-auto">
+          <Trash2 className="h-3 w-3 mr-1" /> Borrar tests
+        </Button>
+      </div>
     </div>
   )
 }

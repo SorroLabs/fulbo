@@ -83,8 +83,8 @@ export default async function AdminPage() {
 
         <TabsContent value="matches" className="mt-6">
           <MatchesAdmin
-            matches={(matches ?? []) as Match[]}
-            competitionId={competitions?.[0]?.id ?? ""}
+            competitions={(competitions ?? []) as any}
+            allMatches={(matches ?? []) as Match[]}
           />
         </TabsContent>
 
