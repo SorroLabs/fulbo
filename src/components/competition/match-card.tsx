@@ -109,7 +109,8 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
                   value={home}
                   onChange={e => setHome(e.target.value)}
                   disabled={isLocked || isPastDeadline}
-                  className="w-12 h-12 text-center text-lg font-black p-0 rounded-xl"
+                  className="w-12 h-12 text-lg font-black p-0 rounded-xl"
+                  style={{ textAlign: "center" }}
                 />
                 <span className="text-muted-foreground font-bold">-</span>
                 <Input
@@ -119,7 +120,8 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
                   value={away}
                   onChange={e => setAway(e.target.value)}
                   disabled={isLocked || isPastDeadline}
-                  className="w-12 h-12 text-center text-lg font-black p-0 rounded-xl"
+                  className="w-12 h-12 text-lg font-black p-0 rounded-xl"
+                  style={{ textAlign: "center" }}
                 />
               </div>
             )}

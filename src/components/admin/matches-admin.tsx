@@ -67,11 +67,13 @@ function MatchRow({ match }: { match: Match }) {
         <div className="flex items-center gap-2">
           <Input type="number" min={0} max={20} value={home}
             onChange={e => setHome(e.target.value)}
-            className="w-12 h-8 text-center p-0 text-sm font-bold" placeholder="0" />
+            className="w-12 h-8 p-0 text-sm font-bold" placeholder="0"
+            style={{ textAlign: "center" }} />
           <span className="text-muted-foreground font-bold">-</span>
           <Input type="number" min={0} max={20} value={away}
             onChange={e => setAway(e.target.value)}
-            className="w-12 h-8 text-center p-0 text-sm font-bold" placeholder="0" />
+            className="w-12 h-8 p-0 text-sm font-bold" placeholder="0"
+            style={{ textAlign: "center" }} />
           <Button size="sm" onClick={handleSubmit}
             disabled={isPending || home === "" || away === ""}
             className="h-8 px-3 text-xs font-bold rounded-full">
