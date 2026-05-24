@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Globe, Lock } from "lucide-react"
+import { Globe, Lock, Zap, ZapOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createProno } from "@/app/actions/pronos"
 import { toast } from "sonner"
@@ -22,13 +22,14 @@ export function CreatePronoForm({ competitions }: Props) {
   const [description, setDescription] = useState("")
   const [competitionId, setCompetitionId] = useState(competitions[0]?.id ?? "")
   const [isPublic, setIsPublic] = useState(true)
+  const [powerUpsEnabled, setPowerUpsEnabled] = useState(true)
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim() || !competitionId) return
     startTransition(async () => {
-      const res = await createProno({ competitionId, name, description, isPublic })
+      const res = await createProno({ competitionId, name, description, isPublic, powerUpsEnabled })
       if (res.error) toast.error(res.error)
       else {
         toast.success("¡Prono creada!")
@@ -76,6 +77,35 @@ export function CreatePronoForm({ competitions }: Props) {
                 <option key={c.id} value={c.id}>{c.name} — {c.season}</option>
               ))}
             </select>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label>Power-ups</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: true, label: "Con power-ups", desc: "Los miembros pueden usar monedas para ventajas", Icon: Zap },
+                { value: false, label: "Sin power-ups", desc: "Competencia pura, solo predicciones", Icon: ZapOff },
+              ].map(({ value, label, desc, Icon }) => (
+                <button
+                  key={String(value)}
+                  type="button"
+                  onClick={() => setPowerUpsEnabled(value)}
+                  className={cn(
+                    "flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-all",
+                    powerUpsEnabled === value
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-border/80"
+                  )}
+                >
+                  <span className="flex items-center gap-2 font-semibold text-sm">
+                    <Icon className="h-4 w-4" /> {label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <Separator />

@@ -48,6 +48,7 @@ export interface Prono {
   name: string
   description: string | null
   is_public: boolean
+  power_ups_enabled: boolean
   invite_code: string
   max_members: number
   status: "active" | "finished"
@@ -55,6 +56,14 @@ export interface Prono {
   competition?: Competition
   owner?: Profile
   member_count?: number
+}
+
+export interface CompetitionWallet {
+  id: string
+  user_id: string
+  competition_id: string
+  coins: number
+  created_at: string
 }
 
 export interface PronoMember {

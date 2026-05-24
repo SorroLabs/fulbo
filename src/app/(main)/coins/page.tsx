@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Coins, TrendingUp, TrendingDown, Zap } from "lucide-react"
+import { Coins, TrendingUp, TrendingDown, Zap, Trophy } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PowerUpStore } from "@/components/coins/power-up-store"
 
@@ -11,18 +11,26 @@ export default async function CoinsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const [{ data: profile }, { data: transactions }] = await Promise.all([
-    supabase.from("profiles").select("coins").eq("id", user.id).single(),
+  const [{ data: wallets }, { data: transactions }] = await Promise.all([
+    supabase
+      .from("competition_wallets")
+      .select("*, competitions(name, season, logo_url, status)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
     supabase
       .from("coin_transactions")
-      .select("*")
+      .select("*, competitions(name)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50),
   ])
 
+  const totalCoins = wallets?.reduce((acc, w) => acc + w.coins, 0) ?? 0
   const totalEarned = transactions?.filter(t => t.amount > 0).reduce((a, t) => a + t.amount, 0) ?? 0
   const totalSpent = transactions?.filter(t => t.amount < 0).reduce((a, t) => a + Math.abs(t.amount), 0) ?? 0
+
+  // Use first active wallet for power-up store context
+  const activeWallet = wallets?.find(w => w.competitions?.status === "active") ?? wallets?.[0]
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto">
@@ -31,30 +39,70 @@ export default async function CoinsPage() {
         <p className="text-muted-foreground">Ganá monedas prediciendo y usálas en power-ups</p>
       </div>
 
-      {/* Balance */}
-      <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="pt-6 pb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Balance actual</p>
-              <div className="flex items-center gap-2">
-                <Coins className="h-8 w-8 text-primary" />
-                <span className="text-5xl font-black text-primary">{profile?.coins ?? 0}</span>
-              </div>
+      {/* Wallets por competencia */}
+      {(wallets?.length ?? 0) > 0 ? (
+        <div className="space-y-3">
+          {wallets!.map(w => (
+            <Card key={w.id} className={w.competitions?.status === "active" ? "border-primary/30 bg-primary/5" : ""}>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {w.competitions?.logo_url
+                      ? <img src={w.competitions.logo_url} alt="" className="w-8 h-8 object-contain" />
+                      : <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"><Trophy className="h-4 w-4 text-primary" /></div>
+                    }
+                    <div>
+                      <p className="font-semibold text-sm">{w.competitions?.name}</p>
+                      <p className="text-xs text-muted-foreground">{w.competitions?.season}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Coins className="h-4 w-4 text-primary" />
+                    <span className="text-2xl font-black text-primary">{w.coins}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {(wallets?.length ?? 0) > 1 && (
+            <div className="flex items-center justify-between text-sm px-1">
+              <span className="text-muted-foreground">Total acumulado</span>
+              <span className="font-black text-primary">{totalCoins} 🪙</span>
             </div>
-            <div className="text-right space-y-2">
-              <div className="flex items-center gap-2 justify-end text-emerald-500">
-                <TrendingUp className="h-4 w-4" />
-                <span className="font-bold">+{totalEarned} ganadas</span>
-              </div>
-              <div className="flex items-center gap-2 justify-end text-red-500">
-                <TrendingDown className="h-4 w-4" />
-                <span className="font-bold">-{totalSpent} gastadas</span>
-              </div>
+          )}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="pt-6 pb-6 text-center text-muted-foreground">
+            <Coins className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="font-medium">Todavía no tenés monedas</p>
+            <p className="text-sm mt-1">Unite a un prono para recibir 100 🪙 de bienvenida</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 text-emerald-500">
+              <TrendingUp className="h-4 w-4" />
+              <span className="font-black text-xl">+{totalEarned}</span>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <p className="text-xs text-muted-foreground mt-1">Ganadas en total</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 text-red-500">
+              <TrendingDown className="h-4 w-4" />
+              <span className="font-black text-xl">-{totalSpent}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Gastadas en total</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* How to earn */}
       <Card>
@@ -63,13 +111,12 @@ export default async function CoinsPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {[
+            { action: "Unirse a una competición", reward: "+100 🪙" },
             { action: "Marcador exacto", reward: "+3 🪙" },
             { action: "Resultado correcto", reward: "+1 🪙" },
             { action: "Predicción especial acertada", reward: "+10 🪙" },
-            { action: "Racha de 3 exactos consecutivos", reward: "+5 🪙 bonus" },
-            { action: "Racha de 5 exactos consecutivos", reward: "+10 🪙 bonus" },
-            { action: "Predecir todos los partidos de una jornada", reward: "+2 🪙" },
-            { action: "Invitar un amigo que se registra", reward: "+5 🪙" },
+            { action: "Racha de 3 exactos", reward: "+5 🪙 bonus" },
+            { action: "Racha de 5 exactos", reward: "+10 🪙 bonus" },
           ].map(({ action, reward }) => (
             <div key={action} className="flex items-center justify-between py-1">
               <span className="text-sm text-muted-foreground">{action}</span>
@@ -90,7 +137,7 @@ export default async function CoinsPage() {
         </TabsList>
 
         <TabsContent value="powerups" className="mt-6">
-          <PowerUpStore userId={user.id} userCoins={profile?.coins ?? 0} />
+          <PowerUpStore userId={user.id} userCoins={activeWallet?.coins ?? 0} />
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
@@ -101,7 +148,8 @@ export default async function CoinsPage() {
                   <div>
                     <p className="text-sm font-medium">{t.reason}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(t.created_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      {t.competitions?.name && <span className="text-primary/70">{t.competitions.name} · </span>}
+                      {new Date(t.created_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
                   <span className={`font-black text-base ${t.amount > 0 ? "text-primary" : "text-red-500"}`}>
