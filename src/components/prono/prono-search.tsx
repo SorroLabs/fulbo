@@ -33,9 +33,14 @@ export function PronoSearch({ pronos, myPollaIds: initialMyIds }: Props) {
     setJoiningId(pronoId)
     startTransition(async () => {
       const res = await joinProno({ pronoId })
-      if (res.error) toast.error(res.error)
-      else {
-        toast.success("¡Te uniste a el prono!")
+      if (res.error) {
+        if (res.error === "No autenticado") {
+          router.push("/login?next=/pronos")
+          return
+        }
+        toast.error(res.error)
+      } else {
+        toast.success("¡Te uniste al prono!")
         setMyIds(s => new Set([...s, pronoId]))
         router.refresh()
       }
