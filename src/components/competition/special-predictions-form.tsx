@@ -2,9 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Trophy, Target, Star, Lock } from "lucide-react"
 import { saveSpecialPrediction } from "@/app/actions/predictions"
 import { toast } from "sonner"
@@ -15,15 +13,16 @@ interface Props {
   competitionStatus: string
   userId: string | null
   existing: any[]
+  teams: string[]
 }
 
 const SPECIALS = [
-  { type: "champion" as const, label: "Campeón del torneo", icon: Trophy, pts: SPECIAL_PREDICTION_POINTS.champion, placeholder: "Ej: Argentina" },
-  { type: "top_scorer" as const, label: "Goleador del torneo", icon: Target, pts: SPECIAL_PREDICTION_POINTS.top_scorer, placeholder: "Ej: Kylian Mbappé" },
-  { type: "surprise_team" as const, label: "Sorpresa del torneo", icon: Star, pts: SPECIAL_PREDICTION_POINTS.surprise_team, placeholder: "Ej: Marruecos" },
+  { type: "champion" as const, label: "Campeón del torneo", icon: Trophy, pts: SPECIAL_PREDICTION_POINTS.champion, isTeam: true },
+  { type: "top_scorer" as const, label: "Goleador del torneo", icon: Target, pts: SPECIAL_PREDICTION_POINTS.top_scorer, isTeam: false, placeholder: "Ej: Kylian Mbappé" },
+  { type: "surprise_team" as const, label: "Sorpresa del torneo", icon: Star, pts: SPECIAL_PREDICTION_POINTS.surprise_team, isTeam: true },
 ]
 
-export function SpecialPredictionsForm({ competitionId, competitionStatus, userId, existing }: Props) {
+export function SpecialPredictionsForm({ competitionId, competitionStatus, userId, existing, teams }: Props) {
   const existingMap = new Map(existing.map(e => [e.type, e]))
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(SPECIALS.map(s => [s.type, existingMap.get(s.type)?.value ?? ""]))
@@ -58,7 +57,7 @@ export function SpecialPredictionsForm({ competitionId, competitionStatus, userI
         Las predicciones especiales se cargan antes de que empiece el torneo y valen puntos extra.
         {isLocked && competitionStatus !== "upcoming" && " Ya no se pueden modificar."}
       </p>
-      {SPECIALS.map(({ type, label, icon: Icon, pts, placeholder }) => {
+      {SPECIALS.map(({ type, label, icon: Icon, pts, isTeam, placeholder }) => {
         const saved = existingMap.get(type)
         return (
           <Card key={type} className={saved ? "border-primary/30" : ""}>
@@ -81,13 +80,27 @@ export function SpecialPredictionsForm({ competitionId, competitionStatus, userI
                 </div>
               ) : (
                 <div className="flex gap-3">
-                  <Input
-                    value={values[type]}
-                    onChange={e => setValues(v => ({ ...v, [type]: e.target.value }))}
-                    placeholder={placeholder}
-                    disabled={isLocked}
-                    className="rounded-xl"
-                  />
+                  {isTeam ? (
+                    <select
+                      value={values[type]}
+                      onChange={e => setValues(v => ({ ...v, [type]: e.target.value }))}
+                      disabled={isLocked}
+                      className="flex-1 h-10 px-3 rounded-xl border border-input bg-background text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Elegí un equipo...</option>
+                      {teams.map(team => (
+                        <option key={team} value={team}>{team}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      value={values[type]}
+                      onChange={e => setValues(v => ({ ...v, [type]: e.target.value }))}
+                      placeholder={placeholder}
+                      disabled={isLocked}
+                      className="flex-1 h-10 px-3 rounded-xl border border-input bg-transparent text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  )}
                   <Button
                     onClick={() => handleSave(type)}
                     disabled={isPending || isLocked || !values[type]}
