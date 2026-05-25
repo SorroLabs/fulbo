@@ -4,18 +4,16 @@ import { useState, useTransition } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { PHASE_MULTIPLIERS } from "@/types"
 import { getTeamFlag } from "@/lib/team-flags"
 import { savePrediction } from "@/app/actions/predictions"
+import { Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import type { Match, Prediction } from "@/types"
 
 function TeamFlag({ name, logo }: { name: string; logo: string | null }) {
   const src = logo || getTeamFlag(name)
   if (!src) return <div className="w-10 h-7 rounded bg-muted" />
-  return (
-    <img src={src} alt={name} className="w-10 h-7 object-cover rounded shadow-sm" style={{ aspectRatio: "4/3" }} />
-  )
+  return <img src={src} alt={name} className="w-10 h-7 object-cover rounded shadow-sm" style={{ aspectRatio: "4/3" }} />
 }
 
 interface MatchCardProps {
@@ -35,8 +33,6 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
   deadline.setMinutes(deadline.getMinutes() - 20)
   const isPastDeadline = new Date() > deadline
   const canEdit = !isLocked && !isPastDeadline
-
-  const pts = PHASE_MULTIPLIERS[match.phase]
 
   const handleSave = (h: string, a: string) => {
     if (!userId || h === "" || a === "") return
@@ -59,6 +55,12 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
 
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const
 
+  const SaveIcon = isPending
+    ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+    : saved
+      ? <Check className="h-3.5 w-3.5 text-primary" />
+      : null
+
   return (
     <Card className={cn(
       "transition-all",
@@ -66,7 +68,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
       saved && match.status === "upcoming" && "border-primary/20"
     )}>
       <CardContent className="pt-4 pb-4">
-        {/* Date + group */}
+        {/* Date + group + status */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs text-muted-foreground">
             {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "short" })}
@@ -76,10 +78,11 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
             <Badge variant={statusColors[match.status]} className="text-xs">
               {match.status === "live" ? "🔴 EN VIVO" : match.status === "finished" ? "Finalizado" : "Próximo"}
             </Badge>
+            {canEdit && SaveIcon}
           </div>
         </div>
 
-        {/* Teams + inputs */}
+        {/* Teams + score */}
         <div className="flex items-center gap-3">
           <div className="flex-1 flex flex-col items-center gap-2">
             <TeamFlag name={match.home_team} logo={match.home_team_logo} />
@@ -88,7 +91,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
 
           <div className="flex items-center gap-2 shrink-0">
             {match.status === "finished" ? (
-              <div className="flex items-center gap-1.5 font-black text-xl">
+              <div className="flex items-center gap-1.5 font-black text-2xl">
                 <span>{match.home_score}</span>
                 <span className="text-muted-foreground">-</span>
                 <span>{match.away_score}</span>
@@ -122,28 +125,24 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Points hint + save status */}
-        {canEdit && (
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              Exacto: <span className="text-primary font-bold">{pts.exact}pts</span> · Resultado: <span className="font-bold">{pts.result}pts</span>
-            </span>
-            <span className={cn("text-xs transition-all", saved && !isPending ? "text-primary font-semibold" : "text-muted-foreground")}>
-              {isPending ? "Guardando..." : saved ? "✓ Guardado" : "Completá los dos campos"}
-            </span>
-          </div>
-        )}
-
-        {/* Prediction result (finished) */}
-        {match.status === "finished" && prediction && (
+        {/* Finished: prediction + points */}
+        {match.status === "finished" && (
           <div className="mt-3 flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
-            <span className="text-xs text-muted-foreground">
-              Tu predicción: <span className="font-bold text-foreground">{prediction.home_score} - {prediction.away_score}</span>
-            </span>
-            {prediction.points_earned !== null && (
-              <span className={cn("text-sm font-black", prediction.points_earned > 0 ? "text-primary" : "text-muted-foreground")}>
-                +{prediction.points_earned} pts
-              </span>
+            {prediction ? (
+              <>
+                <span className="text-xs text-muted-foreground">
+                  Tu pronóstico: <span className="font-bold text-foreground">{prediction.home_score} - {prediction.away_score}</span>
+                </span>
+                <span className={cn(
+                  "text-sm font-black",
+                  prediction.points_earned === null ? "text-muted-foreground" :
+                  prediction.points_earned > 0 ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {prediction.points_earned === null ? "—" : `+${prediction.points_earned} pts`}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground italic">Sin pronóstico</span>
             )}
           </div>
         )}
