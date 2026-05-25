@@ -56,16 +56,9 @@ export async function revertMatchResult({ matchId }: { matchId: string }) {
   const { supabase, error: authError } = await requireAdmin()
   if (authError || !supabase) return { error: authError }
 
-  const { error } = await supabase!.from("matches").update({
-    home_score: null,
-    away_score: null,
-    status: "upcoming",
-  }).eq("id", matchId)
+  const { error } = await supabase!.rpc("revert_match_score", { p_match_id: matchId })
 
   if (error) return { error: error.message }
-
-  // Reset scored predictions so they get re-scored when result is re-entered
-  await supabase!.from("predictions").update({ points_earned: null }).eq("match_id", matchId)
 
   revalidatePath("/admin")
   revalidatePath("/", "layout")
