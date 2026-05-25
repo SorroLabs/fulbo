@@ -82,11 +82,14 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
         ? <MatchCard match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} />
         : <MatchListRow match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} />
       return (
-        <div key={match.id} className="space-y-1">
+        <div key={match.id} className="relative">
           {card}
-          <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground/60">
-            <EyeOff className="h-3 w-3" /> Predicciones visibles al cerrar
-          </p>
+          <span
+            title="Predicciones visibles 20 minutos antes de iniciar"
+            className="absolute top-3 right-3 cursor-default"
+          >
+            <EyeOff className="h-4 w-4 text-muted-foreground/30" />
+          </span>
         </div>
       )
     }
