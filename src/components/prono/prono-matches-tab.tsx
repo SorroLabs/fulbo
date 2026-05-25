@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MatchCard } from "@/components/competition/match-card"
-import { Eye } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
 import type { Match, Prediction } from "@/types"
@@ -87,12 +87,16 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
 
                 if (!locked) {
                   return (
-                    <MatchCard
-                      key={match.id}
-                      match={match}
-                      prediction={myPredMap.get(match.id) ?? null}
-                      userId={userId}
-                    />
+                    <div key={match.id} className="space-y-1">
+                      <MatchCard
+                        match={match}
+                        prediction={myPredMap.get(match.id) ?? null}
+                        userId={userId}
+                      />
+                      <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground/60">
+                        <EyeOff className="h-3 w-3" /> Predicciones visibles al cerrar
+                      </p>
+                    </div>
                   )
                 }
 

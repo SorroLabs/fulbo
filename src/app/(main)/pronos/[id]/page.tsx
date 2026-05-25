@@ -63,9 +63,14 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           </div>
           <p className="text-muted-foreground">{(prono as any).competitions?.name} · {(prono as any).competitions?.season}</p>
         </div>
-        {(isMember || isOwner) && (
-          <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} />
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href={`/competitions/${prono.competition_id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2")}>
+            <Trophy className="h-4 w-4" /> Rankings
+          </Link>
+          {(isMember || isOwner) && (
+            <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} />
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -178,11 +183,6 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-center">
-        <Link href={`/competitions/${prono.competition_id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
-          <Trophy className="mr-2 h-4 w-4" /> Ranking global
-        </Link>
-      </div>
     </div>
   )
 }
