@@ -141,16 +141,19 @@ export function SpecialPredictionsForm({ competitionId, competitionStatus, userI
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(SPECIALS.map(s => [s.type, existingMap.get(s.type)?.value ?? ""]))
   )
+  const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [isPending, startTransition] = useTransition()
 
   const isLocked = competitionStatus !== "upcoming" || !userId
 
-  function handleSave(type: string) {
-    if (!userId || !values[type]) return
+  function handleSave(type: string, value: string) {
+    if (!userId || !value.trim()) return
+    setSaving(s => ({ ...s, [type]: true }))
     startTransition(async () => {
-      const res = await saveSpecialPrediction({ userId, competitionId, type: type as any, value: values[type] })
+      const res = await saveSpecialPrediction({ userId, competitionId, type: type as any, value: value.trim() })
       if (res.error) toast.error(res.error)
-      else toast.success("Predicción especial guardada")
+      else toast.success("Guardado")
+      setSaving(s => ({ ...s, [type]: false }))
     })
   }
 
@@ -196,30 +199,29 @@ export function SpecialPredictionsForm({ competitionId, competitionStatus, userI
                   </span>
                 </div>
               ) : (
-                <div className="flex gap-3">
+                <div className="space-y-2">
                   {isTeam ? (
                     <TeamCombobox
                       teams={teams}
                       value={values[type]}
-                      onChange={v => setValues(prev => ({ ...prev, [type]: v }))}
+                      onChange={v => { setValues(prev => ({ ...prev, [type]: v })); handleSave(type, v) }}
                       disabled={isLocked}
                     />
                   ) : (
                     <input
                       value={values[type]}
                       onChange={e => setValues(v => ({ ...v, [type]: e.target.value }))}
+                      onBlur={e => handleSave(type, e.target.value)}
                       placeholder={placeholder}
                       disabled={isLocked}
-                      className="flex-1 h-10 px-3 rounded-xl border border-input bg-transparent text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full h-10 px-3 rounded-xl border border-input bg-transparent text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   )}
-                  <Button
-                    onClick={() => handleSave(type)}
-                    disabled={isPending || isLocked || !values[type]}
-                    className="rounded-xl shrink-0"
-                  >
-                    {saved ? "Actualizar" : "Guardar"}
-                  </Button>
+                  {values[type] && (
+                    <p className="text-xs text-right text-muted-foreground">
+                      {saving[type] ? "Guardando..." : "✓ Guardado"}
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
