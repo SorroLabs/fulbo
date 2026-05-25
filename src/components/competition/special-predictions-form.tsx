@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Trophy, Target, Star, Lock, ChevronDown, Search } from "lucide-react"
@@ -38,28 +39,79 @@ function TeamCombobox({ teams, value, onChange, disabled }: {
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
-  const ref = useRef<HTMLDivElement>(null)
+  const [rect, setRect] = useState<DOMRect | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (triggerRef.current?.contains(target)) return
+      const dropdown = document.getElementById("team-combobox-portal")
+      if (dropdown?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [])
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 50)
+    if (open) {
+      setRect(triggerRef.current?.getBoundingClientRect() ?? null)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
   }, [open])
 
   const filtered = query
     ? teams.filter(t => t.toLowerCase().includes(query.toLowerCase()))
     : teams
 
+  const dropdown = open && rect ? createPortal(
+    <div
+      id="team-combobox-portal"
+      style={{ position: "fixed", top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 }}
+      className="rounded-xl border border-border bg-background shadow-lg overflow-hidden"
+    >
+      <div className="p-2 border-b border-border">
+        <div className="flex items-center gap-2 px-2">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Buscar equipo..."
+            className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+      </div>
+      <div className="max-h-56 overflow-y-auto">
+        {filtered.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">Sin resultados</p>
+        ) : (
+          filtered.map(team => (
+            <button
+              key={team}
+              type="button"
+              onClick={() => { onChange(team); setOpen(false); setQuery("") }}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2 text-sm text-left hover:bg-muted transition-colors",
+                team === value && "bg-primary/10 text-primary font-semibold"
+              )}
+            >
+              <TeamFlag name={team} />
+              {team}
+            </button>
+          ))
+        )}
+      </div>
+    </div>,
+    document.body
+  ) : null
+
   return (
-    <div ref={ref} className="relative flex-1">
+    <div className="relative flex-1">
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setOpen(o => !o)}
@@ -79,43 +131,7 @@ function TeamCombobox({ teams, value, onChange, disabled }: {
         )}
         <ChevronDown className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", open && "rotate-180")} />
       </button>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-background shadow-lg overflow-hidden">
-          <div className="p-2 border-b border-border">
-            <div className="flex items-center gap-2 px-2">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Buscar equipo..."
-                className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
-              />
-            </div>
-          </div>
-          <div className="max-h-56 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">Sin resultados</p>
-            ) : (
-              filtered.map(team => (
-                <button
-                  key={team}
-                  type="button"
-                  onClick={() => { onChange(team); setOpen(false); setQuery("") }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 text-sm text-left hover:bg-muted transition-colors",
-                    team === value && "bg-primary/10 text-primary font-semibold"
-                  )}
-                >
-                  <TeamFlag name={team} />
-                  {team}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+      {dropdown}
     </div>
   )
 }
