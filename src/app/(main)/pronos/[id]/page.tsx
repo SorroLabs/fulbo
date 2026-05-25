@@ -3,12 +3,14 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, Trophy, Globe, Lock, Crown } from "lucide-react"
+import { Users, Trophy, Globe, Lock, Crown, Calendar } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
+import { PronoMatchesTab } from "@/components/prono/prono-matches-tab"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { Match } from "@/types"
 
 export default async function PollaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -30,6 +32,19 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
     : { data: null }
 
   if (!prono) notFound()
+
+  const memberIds = (members ?? []).map((m: any) => m.user_id)
+
+  const [{ data: matches }, { data: allPredictions }] = await Promise.all([
+    supabase.from("matches").select("*").eq("competition_id", prono.competition_id)
+      .not("home_team", "like", "Ganador%")
+      .order("match_date"),
+    memberIds.length > 0
+      ? supabase.from("predictions").select("user_id, match_id, home_score, away_score, points_earned")
+          .eq("competition_id", prono.competition_id)
+          .in("user_id", memberIds)
+      : { data: [] },
+  ])
 
   const isMember = members?.some((m: any) => m.user_id === user?.id)
   const isOwner = prono.owner_id === user?.id
@@ -82,10 +97,21 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           <TabsTrigger value="ranking" className="rounded-full gap-2">
             <Trophy className="h-4 w-4" /> Tabla
           </TabsTrigger>
+          <TabsTrigger value="matches" className="rounded-full gap-2">
+            <Calendar className="h-4 w-4" /> Partidos
+          </TabsTrigger>
           <TabsTrigger value="members" className="rounded-full gap-2">
             <Users className="h-4 w-4" /> Miembros
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="matches" className="mt-6">
+          <PronoMatchesTab
+            matches={(matches as Match[]) ?? []}
+            members={(members ?? []).map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
+            predictions={allPredictions ?? []}
+          />
+        </TabsContent>
 
         <TabsContent value="ranking" className="mt-6">
           <Card>
