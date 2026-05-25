@@ -40,7 +40,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
       .not("home_team", "like", "Ganador%")
       .order("match_date"),
     memberIds.length > 0
-      ? supabase.from("predictions").select("user_id, match_id, home_score, away_score, points_earned")
+      ? supabase.from("predictions").select("*")
           .eq("competition_id", prono.competition_id)
           .in("user_id", memberIds)
       : { data: [] },
@@ -110,6 +110,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
             matches={(matches as Match[]) ?? []}
             members={(members ?? []).map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
             predictions={allPredictions ?? []}
+            userId={user?.id ?? null}
           />
         </TabsContent>
 
@@ -177,10 +178,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
         </TabsContent>
       </Tabs>
 
-      <div className="flex flex-col sm:flex-row justify-center gap-3">
-        <Link href={`/competitions/${prono.competition_id}`} className={cn(buttonVariants(), "rounded-full font-bold")}>
-          Hacer predicciones
-        </Link>
+      <div className="flex justify-center">
         <Link href={`/competitions/${prono.competition_id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
           <Trophy className="mr-2 h-4 w-4" /> Ranking global
         </Link>

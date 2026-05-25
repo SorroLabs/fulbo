@@ -5,28 +5,22 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Eye, EyeOff } from "lucide-react"
+import { MatchCard } from "@/components/competition/match-card"
+import { Eye } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
-import type { Match } from "@/types"
+import type { Match, Prediction } from "@/types"
 
 interface Member {
   user_id: string
   profiles: { full_name: string | null; nickname: string | null; avatar_url: string | null } | null
 }
 
-interface Prediction {
-  user_id: string
-  match_id: string
-  home_score: number
-  away_score: number
-  points_earned: number | null
-}
-
 interface Props {
   matches: Match[]
   members: Member[]
   predictions: Prediction[]
+  userId: string | null
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -53,18 +47,22 @@ function TeamFlag({ name }: { name: string }) {
   return <img src={src} alt={name} className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
 }
 
-function MemberInitials(profile: Member["profiles"]) {
-  return (profile?.full_name ?? profile?.nickname ?? "?")
-    .split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
-}
-
-export function PronoMatchesTab({ matches, members, predictions }: Props) {
+export function PronoMatchesTab({ matches, members, predictions, userId }: Props) {
   const [selected, setSelected] = useState<Match | null>(null)
 
+  // Map: matchId -> userId -> prediction
   const predMap = new Map<string, Map<string, Prediction>>()
   for (const p of predictions) {
     if (!predMap.has(p.match_id)) predMap.set(p.match_id, new Map())
     predMap.get(p.match_id)!.set(p.user_id, p)
+  }
+
+  // Map: matchId -> user's own prediction
+  const myPredMap = new Map<string, Prediction>()
+  if (userId) {
+    for (const p of predictions) {
+      if (p.user_id === userId) myPredMap.set(p.match_id, p)
+    }
   }
 
   const byPhase = matches.reduce((acc, m) => {
@@ -83,20 +81,30 @@ export function PronoMatchesTab({ matches, members, predictions }: Props) {
             <h3 className="font-bold text-lg mb-4">
               <Badge variant="outline" className="text-primary border-primary/30">{PHASE_LABELS[phase]}</Badge>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {byPhase[phase].map(match => {
                 const locked = isLocked(match)
+
+                if (!locked) {
+                  return (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      prediction={myPredMap.get(match.id) ?? null}
+                      userId={userId}
+                    />
+                  )
+                }
+
+                // Locked: clickable card to see all predictions
+                const matchPreds = predMap.get(match.id)
                 return (
                   <button
                     key={match.id}
-                    disabled={!locked}
-                    onClick={() => locked && setSelected(match)}
-                    className={cn(
-                      "w-full text-left transition-all rounded-xl",
-                      locked ? "cursor-pointer hover:scale-[1.01]" : "cursor-default opacity-60"
-                    )}
+                    onClick={() => setSelected(match)}
+                    className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl"
                   >
-                    <Card className={cn(locked && "border-primary/20 hover:border-primary/40 transition-colors")}>
+                    <Card className="border-primary/20 hover:border-primary/40 transition-colors">
                       <CardContent className="pt-4 pb-4">
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-xs text-muted-foreground">
@@ -104,10 +112,7 @@ export function PronoMatchesTab({ matches, members, predictions }: Props) {
                           </span>
                           <div className="flex items-center gap-2">
                             {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}
-                            {locked
-                              ? <Eye className="h-4 w-4 text-primary" />
-                              : <EyeOff className="h-4 w-4 text-muted-foreground" />
-                            }
+                            <Eye className="h-4 w-4 text-primary" />
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -118,19 +123,16 @@ export function PronoMatchesTab({ matches, members, predictions }: Props) {
                           <div className="shrink-0 font-black text-lg px-2">
                             {match.status === "finished"
                               ? `${match.home_score} - ${match.away_score}`
-                              : "vs"
-                            }
+                              : "vs"}
                           </div>
                           <div className="flex-1 flex items-center gap-2 justify-end">
                             <span className="text-sm font-semibold truncate text-right">{match.away_team}</span>
                             <TeamFlag name={match.away_team} />
                           </div>
                         </div>
-                        {locked && (
-                          <p className="text-xs text-primary/70 text-center mt-2">
-                            {predMap.get(match.id)?.size ?? 0} de {members.length} predicciones
-                          </p>
-                        )}
+                        <p className="text-xs text-primary/70 text-center mt-2">
+                          {matchPreds?.size ?? 0} de {members.length} predicciones · tap para ver
+                        </p>
                       </CardContent>
                     </Card>
                   </button>
@@ -153,7 +155,9 @@ export function PronoMatchesTab({ matches, members, predictions }: Props) {
                       <span className="font-bold text-sm">{selected.home_team}</span>
                     </div>
                     <span className="font-black text-lg px-1">
-                      {selected.status === "finished" ? `${selected.home_score} - ${selected.away_score}` : "vs"}
+                      {selected.status === "finished"
+                        ? `${selected.home_score} - ${selected.away_score}`
+                        : "vs"}
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm">{selected.away_team}</span>
@@ -166,17 +170,21 @@ export function PronoMatchesTab({ matches, members, predictions }: Props) {
               <div className="divide-y divide-border/50">
                 {members.map(member => {
                   const pred = selectedPreds?.get(member.user_id)
-                  const initials = MemberInitials(member.profiles)
+                  const initials = (member.profiles?.full_name ?? member.profiles?.nickname ?? "?")
+                    .split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
                   const displayName = member.profiles?.nickname
                     ? `@${member.profiles.nickname}`
                     : (member.profiles?.full_name ?? "Usuario")
+                  const isMe = member.user_id === userId
                   return (
-                    <div key={member.user_id} className="flex items-center gap-3 py-3">
+                    <div key={member.user_id} className={cn("flex items-center gap-3 py-3", isMe && "text-primary")}>
                       <Avatar className="h-8 w-8 shrink-0">
                         <AvatarImage src={member.profiles?.avatar_url ?? undefined} />
                         <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
                       </Avatar>
-                      <span className="flex-1 text-sm font-medium truncate">{displayName}</span>
+                      <span className="flex-1 text-sm font-medium truncate">
+                        {displayName}{isMe && " (vos)"}
+                      </span>
                       {pred ? (
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="font-black text-base">
