@@ -12,8 +12,8 @@ import type { Match, Prediction } from "@/types"
 
 function TeamFlag({ name, logo }: { name: string; logo: string | null }) {
   const src = logo || getTeamFlag(name)
-  if (!src) return <div className="w-10 h-7 rounded bg-muted" />
-  return <img src={src} alt={name} className="w-10 h-7 object-cover rounded shadow-sm" style={{ aspectRatio: "4/3" }} />
+  if (!src) return <div className="w-10 h-7 rounded bg-muted shrink-0" />
+  return <img src={src} alt={name} className="w-10 h-7 rounded shadow-sm object-cover shrink-0" />
 }
 
 interface MatchCardProps {
@@ -38,11 +38,8 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
     if (!userId || h === "" || a === "") return
     startTransition(async () => {
       const res = await savePrediction({
-        userId,
-        matchId: match.id,
-        competitionId: match.competition_id,
-        homeScore: parseInt(h),
-        awayScore: parseInt(a),
+        userId, matchId: match.id, competitionId: match.competition_id,
+        homeScore: parseInt(h), awayScore: parseInt(a),
       })
       if (res.error) toast.error(res.error)
       else setSaved(true)
@@ -55,11 +52,9 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
 
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const
 
-  const SaveIcon = isPending
-    ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-    : saved
-      ? <Check className="h-3.5 w-3.5 text-primary" />
-      : null
+  const dateStr = new Date(match.match_date).toLocaleString("es", {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset"
+  })
 
   return (
     <Card className={cn(
@@ -67,12 +62,10 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
       match.status === "live" && "border-primary/50 shadow-md shadow-primary/10",
       saved && match.status === "upcoming" && "border-primary/20"
     )}>
-      <CardContent className="pt-4 pb-4">
-        {/* Date + group + status */}
+      <CardContent className="pt-4 pb-4 flex flex-col">
+        {/* Header: date + group + badge */}
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs text-muted-foreground">
-            {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "short" })}
-          </span>
+          <span className="text-xs text-muted-foreground">{dateStr}</span>
           <div className="flex items-center gap-2">
             {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}
             <Badge variant={statusColors[match.status]} className="text-xs">
@@ -81,14 +74,15 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Teams + score */}
+        {/* Teams + score — fixed height center so all cards are uniform */}
         <div className="flex items-center gap-3">
           <div className="flex-1 flex flex-col items-center gap-2">
             <TeamFlag name={match.home_team} logo={match.home_team_logo} />
             <span className="text-sm font-semibold text-center leading-tight">{match.home_team}</span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Center: always h-12 tall */}
+          <div className="shrink-0 flex items-center justify-center h-12">
             {match.status === "finished" ? (
               <div className="flex items-center gap-1.5 font-black text-2xl">
                 <span>{match.home_score}</span>
@@ -124,32 +118,37 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Save icon bottom right */}
-        {canEdit && SaveIcon && (
-          <div className="flex justify-end mt-2">{SaveIcon}</div>
-        )}
-
-        {/* Finished: prediction + points */}
-        {match.status === "finished" && (
-          <div className="mt-3 flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
-            {prediction ? (
-              <>
-                <span className="text-xs text-muted-foreground">
-                  Tu pronóstico: <span className="font-bold text-foreground">{prediction.home_score} - {prediction.away_score}</span>
-                </span>
-                <span className={cn(
-                  "text-sm font-black",
-                  prediction.points_earned === null ? "text-muted-foreground" :
-                  prediction.points_earned > 0 ? "text-primary" : "text-muted-foreground"
-                )}>
-                  {prediction.points_earned === null ? "—" : `+${prediction.points_earned} pts`}
-                </span>
-              </>
-            ) : (
-              <span className="text-xs text-muted-foreground italic">Sin pronóstico</span>
-            )}
-          </div>
-        )}
+        {/* Footer — always rendered, fixed height, keeps cards uniform */}
+        <div className="mt-3 h-8 flex items-center">
+          {match.status === "finished" ? (
+            <div className="w-full flex items-center justify-between bg-muted/50 rounded-lg px-3 py-1.5">
+              {prediction ? (
+                <>
+                  <span className="text-xs text-muted-foreground">
+                    Tu pronóstico: <span className="font-bold text-foreground">{prediction.home_score} - {prediction.away_score}</span>
+                  </span>
+                  <span className={cn(
+                    "text-sm font-black",
+                    prediction.points_earned === null ? "text-muted-foreground" :
+                    prediction.points_earned > 0 ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    {prediction.points_earned === null ? "—" : `+${prediction.points_earned} pts`}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">Sin pronóstico</span>
+              )}
+            </div>
+          ) : canEdit ? (
+            <div className="w-full flex justify-end">
+              {isPending
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                : saved
+                  ? <Check className="h-3.5 w-3.5 text-primary" />
+                  : null}
+            </div>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   )
