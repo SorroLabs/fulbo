@@ -60,11 +60,8 @@ export function MatchListRow({ match, prediction, userId }: Props) {
     )}>
       {/* Date + group */}
       <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
-        <span className="text-xs text-muted-foreground text-center leading-tight">
-          {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short" })}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {new Date(match.match_date).toLocaleString("es", { hour: "2-digit", minute: "2-digit" })}
+        <span className="text-xs text-muted-foreground text-center whitespace-nowrap">
+          {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
         </span>
         {match.group_name && <span className="text-xs text-muted-foreground/60">{match.group_name}</span>}
       </div>
@@ -75,20 +72,20 @@ export function MatchListRow({ match, prediction, userId }: Props) {
         <Flag name={match.home_team} logo={match.home_team_logo} />
       </div>
 
-      {/* Score / inputs */}
-      <div className="shrink-0 flex items-center gap-1">
+      {/* Score / inputs — fixed width so dash always centers */}
+      <div className="shrink-0 w-20 flex items-center justify-center gap-1">
         {match.status === "finished" ? (
-          <span className="font-black text-lg w-16 text-center">
+          <span className="font-black text-lg text-center">
             {match.home_score} - {match.away_score}
           </span>
         ) : (
-          <div className="flex items-center gap-1">
+          <>
             <input
               type="number" min={0} max={20} value={home}
               onChange={e => { setHome(e.target.value); setSaved(false) }}
               onBlur={handleBlur}
               disabled={!canEdit}
-              className="w-9 h-9 text-sm font-black rounded-lg border border-input bg-transparent outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="w-8 h-8 text-sm font-black rounded-lg border border-input bg-transparent outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
               style={{ textAlign: "center", padding: 0 }}
             />
             <span className="text-muted-foreground font-bold text-xs">-</span>
@@ -97,10 +94,10 @@ export function MatchListRow({ match, prediction, userId }: Props) {
               onChange={e => { setAway(e.target.value); setSaved(false) }}
               onBlur={handleBlur}
               disabled={!canEdit}
-              className="w-9 h-9 text-sm font-black rounded-lg border border-input bg-transparent outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="w-8 h-8 text-sm font-black rounded-lg border border-input bg-transparent outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
               style={{ textAlign: "center", padding: 0 }}
             />
-          </div>
+          </>
         )}
       </div>
 

@@ -78,7 +78,6 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
             <Badge variant={statusColors[match.status]} className="text-xs">
               {match.status === "live" ? "🔴 EN VIVO" : match.status === "finished" ? "Finalizado" : "Próximo"}
             </Badge>
-            {canEdit && SaveIcon}
           </div>
         </div>
 
@@ -124,6 +123,11 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
             <span className="text-sm font-semibold text-center leading-tight">{match.away_team}</span>
           </div>
         </div>
+
+        {/* Save icon bottom right */}
+        {canEdit && SaveIcon && (
+          <div className="flex justify-end mt-2">{SaveIcon}</div>
+        )}
 
         {/* Finished: prediction + points */}
         {match.status === "finished" && (
