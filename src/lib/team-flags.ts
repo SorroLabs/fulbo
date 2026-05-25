@@ -41,7 +41,7 @@ const FLAG_CODES: Record<string, string> = {
   // Asia
   Japón: "jp", "Corea del Sur": "kr", "Arabia Saudita": "sa",
   Australia: "au", Irán: "ir", Uzbekistán: "uz", Jordania: "jo",
-  Iraq: "iq", Indonesia: "id", China: "cn", Omán: "om", Qatar: "qa",
+  Iraq: "iq", Irak: "iq", Indonesia: "id", China: "cn", Omán: "om", Qatar: "qa", Catar: "qa",
   Kuwait: "kw", Baréin: "bh", Tayikistán: "tj", Kirguistán: "kg",
   Siria: "sy", Líbano: "lb", Palestina: "ps", India: "in",
   Tailandia: "th", Vietnam: "vn", Filipinas: "ph", "Corea del Norte": "kp",
