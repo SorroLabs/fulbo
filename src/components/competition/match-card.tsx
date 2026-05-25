@@ -12,8 +12,15 @@ import type { Match, Prediction } from "@/types"
 
 function TeamFlag({ name, logo }: { name: string; logo: string | null }) {
   const src = logo || getTeamFlag(name)
-  if (!src) return <div className="w-10 h-7 rounded bg-muted shrink-0" />
-  return <img src={src} alt={name} className="w-10 h-7 rounded shadow-sm object-cover shrink-0" />
+  if (!src) return <div className="rounded bg-muted" style={{ width: 40, height: 28, flexShrink: 0 }} />
+  return (
+    <img
+      src={src}
+      alt={name}
+      className="rounded shadow-sm object-cover"
+      style={{ width: 40, height: 28, flexShrink: 0 }}
+    />
+  )
 }
 
 interface MatchCardProps {
@@ -53,7 +60,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const
 
   const dateStr = new Date(match.match_date).toLocaleString("es", {
-    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset"
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
   })
 
   return (
@@ -62,8 +69,8 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
       match.status === "live" && "border-primary/50 shadow-md shadow-primary/10",
       saved && match.status === "upcoming" && "border-primary/20"
     )}>
-      <CardContent className="pt-4 pb-4 flex flex-col">
-        {/* Header: date + group + badge */}
+      <CardContent>
+        {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs text-muted-foreground">{dateStr}</span>
           <div className="flex items-center gap-2">
@@ -74,15 +81,14 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Teams + score — fixed height center so all cards are uniform */}
+        {/* Teams + score — center is always 48px tall */}
         <div className="flex items-center gap-3">
           <div className="flex-1 flex flex-col items-center gap-2">
             <TeamFlag name={match.home_team} logo={match.home_team_logo} />
             <span className="text-sm font-semibold text-center leading-tight">{match.home_team}</span>
           </div>
 
-          {/* Center: always h-12 tall */}
-          <div className="shrink-0 flex items-center justify-center h-12">
+          <div className="shrink-0 flex items-center justify-center" style={{ height: 48 }}>
             {match.status === "finished" ? (
               <div className="flex items-center gap-1.5 font-black text-2xl">
                 <span>{match.home_score}</span>
@@ -118,10 +124,10 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Footer — always rendered, fixed height, keeps cards uniform */}
-        <div className="mt-3 h-8 flex items-center">
+        {/* Footer — always 36px tall to keep all cards uniform */}
+        <div className="mt-3 flex items-center" style={{ minHeight: 36 }}>
           {match.status === "finished" ? (
-            <div className="w-full flex items-center justify-between bg-muted/50 rounded-lg px-3 py-1.5">
+            <div className="w-full flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
               {prediction ? (
                 <>
                   <span className="text-xs text-muted-foreground">
@@ -139,15 +145,17 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
                 <span className="text-xs text-muted-foreground italic">Sin pronóstico</span>
               )}
             </div>
-          ) : canEdit ? (
-            <div className="w-full flex justify-end">
-              {isPending
-                ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                : saved
-                  ? <Check className="h-3.5 w-3.5 text-primary" />
-                  : null}
+          ) : (
+            <div className="w-full flex justify-end" style={{ minHeight: 36, alignItems: "center" }}>
+              {canEdit && (
+                isPending
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  : saved
+                    ? <Check className="h-3.5 w-3.5 text-primary" />
+                    : null
+              )}
             </div>
-          ) : null}
+          )}
         </div>
       </CardContent>
     </Card>
