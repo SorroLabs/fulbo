@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MatchCard } from "@/components/competition/match-card"
-import { Eye, EyeOff } from "lucide-react"
+import { MatchListRow } from "@/components/competition/match-list-row"
+import { Eye, EyeOff, LayoutGrid, List } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
 import type { Match, Prediction } from "@/types"
@@ -49,6 +50,7 @@ function TeamFlag({ name }: { name: string }) {
 
 export function PronoMatchesTab({ matches, members, predictions, userId }: Props) {
   const [selected, setSelected] = useState<Match | null>(null)
+  const [view, setView] = useState<"grid" | "list">("grid")
 
   // Map: matchId -> userId -> prediction
   const predMap = new Map<string, Map<string, Prediction>>()
@@ -73,76 +75,128 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
 
   const selectedPreds = selected ? predMap.get(selected.id) : null
 
+  function renderMatch(match: Match) {
+    const locked = isLocked(match)
+    if (!locked) {
+      const card = view === "grid"
+        ? <MatchCard match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} />
+        : <MatchListRow match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} />
+      return (
+        <div key={match.id} className="space-y-1">
+          {card}
+          <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground/60">
+            <EyeOff className="h-3 w-3" /> Predicciones visibles al cerrar
+          </p>
+        </div>
+      )
+    }
+
+    const matchPreds = predMap.get(match.id)
+    if (view === "list") {
+      return (
+        <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left">
+          <div className={cn(
+            "flex items-center gap-3 py-2.5 px-3 rounded-xl border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
+          )}>
+            <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
+              <span className="text-xs text-muted-foreground text-center leading-tight">
+                {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short" })}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(match.match_date).toLocaleString("es", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+              {match.group_name && <span className="text-xs text-muted-foreground/60">{match.group_name}</span>}
+            </div>
+            <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+              <span className="text-sm font-semibold truncate text-right">{match.home_team}</span>
+              <TeamFlag name={match.home_team} />
+            </div>
+            <span className="font-black text-lg w-16 text-center shrink-0">
+              {match.status === "finished" ? `${match.home_score}-${match.away_score}` : "vs"}
+            </span>
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <TeamFlag name={match.away_team} />
+              <span className="text-sm font-semibold truncate">{match.away_team}</span>
+            </div>
+            <div className="shrink-0 flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{matchPreds?.size ?? 0}/{members.length}</span>
+              <Eye className="h-4 w-4 text-primary" />
+            </div>
+          </div>
+        </button>
+      )
+    }
+
+    return (
+      <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
+        <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-muted-foreground">
+                {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <div className="flex items-center gap-2">
+                {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}
+                <Eye className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 flex items-center gap-2">
+                <TeamFlag name={match.home_team} />
+                <span className="text-sm font-semibold truncate">{match.home_team}</span>
+              </div>
+              <div className="shrink-0 font-black text-lg px-2">
+                {match.status === "finished" ? `${match.home_score} - ${match.away_score}` : "vs"}
+              </div>
+              <div className="flex-1 flex items-center gap-2 justify-end">
+                <span className="text-sm font-semibold truncate text-right">{match.away_team}</span>
+                <TeamFlag name={match.away_team} />
+              </div>
+            </div>
+            <p className="text-xs text-primary/70 text-center mt-2">
+              {matchPreds?.size ?? 0} de {members.length} predicciones · tap para ver
+            </p>
+          </CardContent>
+        </Card>
+      </button>
+    )
+  }
+
   return (
     <>
       <div className="space-y-8">
+        {/* View toggle */}
+        <div className="flex justify-end">
+          <div className="flex items-center rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => setView("grid")}
+              className={cn("p-2 transition-colors", view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={cn("p-2 transition-colors", view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
         {PHASE_ORDER.filter(p => byPhase[p]?.length).map(phase => (
           <div key={phase}>
             <h3 className="font-bold text-lg mb-4">
               <Badge variant="outline" className="text-primary border-primary/30">{PHASE_LABELS[phase]}</Badge>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {byPhase[phase].map(match => {
-                const locked = isLocked(match)
-
-                if (!locked) {
-                  return (
-                    <div key={match.id} className="space-y-1">
-                      <MatchCard
-                        match={match}
-                        prediction={myPredMap.get(match.id) ?? null}
-                        userId={userId}
-                      />
-                      <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground/60">
-                        <EyeOff className="h-3 w-3" /> Predicciones visibles al cerrar
-                      </p>
-                    </div>
-                  )
-                }
-
-                // Locked: clickable card to see all predictions
-                const matchPreds = predMap.get(match.id)
-                return (
-                  <button
-                    key={match.id}
-                    onClick={() => setSelected(match)}
-                    className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl"
-                  >
-                    <Card className="border-primary/20 hover:border-primary/40 transition-colors">
-                      <CardContent className="pt-4 pb-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}
-                            <Eye className="h-4 w-4 text-primary" />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 flex items-center gap-2">
-                            <TeamFlag name={match.home_team} />
-                            <span className="text-sm font-semibold truncate">{match.home_team}</span>
-                          </div>
-                          <div className="shrink-0 font-black text-lg px-2">
-                            {match.status === "finished"
-                              ? `${match.home_score} - ${match.away_score}`
-                              : "vs"}
-                          </div>
-                          <div className="flex-1 flex items-center gap-2 justify-end">
-                            <span className="text-sm font-semibold truncate text-right">{match.away_team}</span>
-                            <TeamFlag name={match.away_team} />
-                          </div>
-                        </div>
-                        <p className="text-xs text-primary/70 text-center mt-2">
-                          {matchPreds?.size ?? 0} de {members.length} predicciones · tap para ver
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </button>
-                )
-              })}
-            </div>
+            {view === "grid" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {byPhase[phase].map(match => renderMatch(match))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {byPhase[phase].map(match => renderMatch(match))}
+              </div>
+            )}
           </div>
         ))}
       </div>

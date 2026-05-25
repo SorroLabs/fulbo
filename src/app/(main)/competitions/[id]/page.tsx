@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trophy, Calendar, Target, BarChart3, Users, Star } from "lucide-react"
-import { MatchCard } from "@/components/competition/match-card"
+import { MatchesView } from "@/components/competition/matches-view"
 import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
-import type { Match } from "@/types"
+import type { Match, Prediction } from "@/types"
 
 export default async function CompetitionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -33,24 +33,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
       .flatMap(m => [m.home_team, m.away_team]) ?? []
   )).sort((a, b) => a.localeCompare(b, "es"))
 
-  const matchesByPhase = (matches as Match[] | null)?.reduce((acc, m) => {
-    if (!acc[m.phase]) acc[m.phase] = []
-    acc[m.phase].push(m)
-    return acc
-  }, {} as Record<string, Match[]>)
-
-  const predMap = new Map((userPredictions ?? []).map((p: any) => [p.match_id, p]))
-
-  const PHASE_LABELS: Record<string, string> = {
-    groups: "Fase de grupos",
-    round_of_32: "Ronda de 32",
-    round_of_16: "Octavos de final",
-    quarterfinals: "Cuartos de final",
-    semifinals: "Semifinales",
-    third_place: "Tercer puesto",
-    final: "Final",
-  }
-  const PHASE_ORDER = ["groups", "round_of_32", "round_of_16", "quarterfinals", "semifinals", "third_place", "final"]
+  const predMap = new Map((userPredictions ?? []).map((p: any) => [p.match_id, p] as [string, Prediction]))
 
   const totalMatches = matches?.length ?? 0
   const predictedCount = userPredictions?.length ?? 0
@@ -116,27 +99,12 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="matches" className="mt-6 space-y-8">
-          {PHASE_ORDER.filter(p => matchesByPhase?.[p]?.length).map(phase => (
-            <div key={phase}>
-              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                <Badge variant="outline" className="text-primary border-primary/30">{PHASE_LABELS[phase]}</Badge>
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {matchesByPhase![phase].map(match => (
-                  <MatchCard
-                    key={match.id}
-                    match={match}
-                    prediction={predMap.get(match.id) ?? null}
-                    userId={user?.id ?? null}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-          {!totalMatches && (
-            <p className="text-center text-muted-foreground py-10">Los partidos se cargarán próximamente.</p>
-          )}
+        <TabsContent value="matches" className="mt-6">
+          <MatchesView
+            matches={(matches as Match[]) ?? []}
+            predMap={predMap}
+            userId={user?.id ?? null}
+          />
         </TabsContent>
 
         <TabsContent value="specials" className="mt-6">
