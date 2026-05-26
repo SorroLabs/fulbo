@@ -99,20 +99,20 @@ export function MatchCard({ match, prediction, userId, eyeIcon }: MatchCardProps
             ) : (
               <div className="flex items-center gap-1.5">
                 <input
-                  type="number" min={0} max={20} value={home}
-                  onChange={e => { setHome(e.target.value); setSaved(false) }}
+                  type="text" inputMode="numeric" pattern="[0-9]*" value={home}
+                  onChange={e => { setHome(e.target.value.replace(/\D/g, "").slice(0, 2)); setSaved(false) }}
                   onBlur={handleBlur}
                   disabled={!canEdit}
-                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-transparent outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
                   style={{ textAlign: "center", padding: 0 }}
                 />
                 <span className="text-muted-foreground font-bold">-</span>
                 <input
-                  type="number" min={0} max={20} value={away}
-                  onChange={e => { setAway(e.target.value); setSaved(false) }}
+                  type="text" inputMode="numeric" pattern="[0-9]*" value={away}
+                  onChange={e => { setAway(e.target.value.replace(/\D/g, "").slice(0, 2)); setSaved(false) }}
                   onBlur={handleBlur}
                   disabled={!canEdit}
-                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-transparent outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
                   style={{ textAlign: "center", padding: 0 }}
                 />
               </div>
