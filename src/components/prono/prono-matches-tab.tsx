@@ -130,35 +130,59 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
       )
     }
 
+    // Grid locked card — same structure as MatchCard for visual consistency
+    const dateStr = new Date(match.match_date).toLocaleString("es", {
+      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
+    })
     return (
       <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
         <Card className="border-primary/20 hover:border-primary/40 transition-colors">
-          <CardContent className="pt-4 pb-4">
+          <CardContent>
+            {/* Header */}
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground">
-                {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-              </span>
+              <span className="text-xs text-muted-foreground">{dateStr}</span>
               <div className="flex items-center gap-2">
                 {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}
+                <Badge variant={match.status === "finished" ? "outline" : "secondary"} className="text-xs">
+                  {match.status === "finished" ? "Finalizado" : "Próximo"}
+                </Badge>
                 <Eye className="h-4 w-4 text-primary" />
               </div>
             </div>
+
+            {/* Teams + score — same layout as MatchCard */}
             <div className="flex items-center gap-3">
-              <div className="flex-1 flex items-center gap-2">
-                <TeamFlag name={match.home_team} />
-                <span className="text-sm font-semibold truncate">{match.home_team}</span>
+              <div className="flex-1 flex flex-col items-center gap-2">
+                <img src={getTeamFlag(match.home_team) ?? undefined} alt={match.home_team}
+                  className="rounded shadow-sm object-cover" style={{ width: 40, height: 28, flexShrink: 0 }} />
+                <span className="text-sm font-semibold text-center leading-tight">{match.home_team}</span>
               </div>
-              <div className="shrink-0 font-black text-lg px-2">
-                {match.status === "finished" ? `${match.home_score} - ${match.away_score}` : "vs"}
+              <div className="shrink-0 flex items-center justify-center" style={{ height: 48 }}>
+                <div className="flex items-center gap-1.5 font-black text-2xl">
+                  {match.status === "finished" ? (
+                    <>
+                      <span>{match.home_score}</span>
+                      <span className="text-muted-foreground">-</span>
+                      <span>{match.away_score}</span>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground text-lg font-bold">vs</span>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 flex items-center gap-2 justify-end">
-                <span className="text-sm font-semibold truncate text-right">{match.away_team}</span>
-                <TeamFlag name={match.away_team} />
+              <div className="flex-1 flex flex-col items-center gap-2">
+                <img src={getTeamFlag(match.away_team) ?? undefined} alt={match.away_team}
+                  className="rounded shadow-sm object-cover" style={{ width: 40, height: 28, flexShrink: 0 }} />
+                <span className="text-sm font-semibold text-center leading-tight">{match.away_team}</span>
               </div>
             </div>
-            <p className="text-xs text-primary/70 text-center mt-2">
-              {matchPreds?.size ?? 0} de {members.length} predicciones · tap para ver
-            </p>
+
+            {/* Footer — same height as MatchCard footer */}
+            <div className="mt-3 flex items-center justify-center" style={{ minHeight: 36 }}>
+              <span className="text-xs text-primary/70">
+                {matchPreds?.size ?? 0} de {members.length} predicciones · tap para ver
+              </span>
+            </div>
           </CardContent>
         </Card>
       </button>
