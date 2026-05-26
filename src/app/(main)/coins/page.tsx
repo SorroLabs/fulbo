@@ -11,26 +11,24 @@ export default async function CoinsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const [{ data: wallets }, { data: transactions }] = await Promise.all([
+  const [{ data: memberRows }, { data: transactions }] = await Promise.all([
     supabase
-      .from("competition_wallets")
-      .select("*, competitions(name, season, logo_url, status)")
+      .from("prono_members")
+      .select("coins_in_prono, pronos(id, name, competition_id, competitions(name, season, logo_url, status))")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
+      .order("joined_at", { ascending: false }),
     supabase
       .from("coin_transactions")
-      .select("*, competitions(name)")
+      .select("*, competitions(name), pronos(name)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50),
   ])
 
-  const totalCoins = wallets?.reduce((acc, w) => acc + w.coins, 0) ?? 0
-  const totalEarned = transactions?.filter(t => t.amount > 0).reduce((a, t) => a + t.amount, 0) ?? 0
-  const totalSpent = transactions?.filter(t => t.amount < 0).reduce((a, t) => a + Math.abs(t.amount), 0) ?? 0
+  const totalEarned = transactions?.filter(t => t.type === "earn" || t.type === "admin_grant").reduce((a, t) => a + t.amount, 0) ?? 0
+  const totalSpent = transactions?.filter(t => t.type === "spend").reduce((a, t) => a + t.amount, 0) ?? 0
 
-  // Use first active wallet for power-up store context
-  const activeWallet = wallets?.find(w => w.competitions?.status === "active") ?? wallets?.[0]
+  const activeRow = memberRows?.find(r => (r.pronos as any)?.competitions?.status === "active") ?? memberRows?.[0]
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto">
@@ -39,38 +37,36 @@ export default async function CoinsPage() {
         <p className="text-muted-foreground">Ganá monedas prediciendo y usálas en power-ups</p>
       </div>
 
-      {/* Wallets por competencia */}
-      {(wallets?.length ?? 0) > 0 ? (
+      {/* Per-prono wallets */}
+      {(memberRows?.length ?? 0) > 0 ? (
         <div className="space-y-3">
-          {wallets!.map(w => (
-            <Card key={w.id} className={w.competitions?.status === "active" ? "border-primary/30 bg-primary/5" : ""}>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {w.competitions?.logo_url
-                      ? <img src={w.competitions.logo_url} alt="" className="w-8 h-8 object-contain" />
-                      : <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"><Trophy className="h-4 w-4 text-primary" /></div>
-                    }
-                    <div>
-                      <p className="font-semibold text-sm">{w.competitions?.name}</p>
-                      <p className="text-xs text-muted-foreground">{w.competitions?.season}</p>
+          {memberRows!.map((row, i) => {
+            const prono = row.pronos as any
+            const comp = prono?.competitions
+            const isActive = comp?.status === "active"
+            return (
+              <Card key={i} className={isActive ? "border-primary/30 bg-primary/5" : ""}>
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {comp?.logo_url
+                        ? <img src={comp.logo_url} alt="" className="w-8 h-8 object-contain" />
+                        : <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"><Trophy className="h-4 w-4 text-primary" /></div>
+                      }
+                      <div>
+                        <p className="font-semibold text-sm">{prono?.name}</p>
+                        <p className="text-xs text-muted-foreground">{comp?.name} · {comp?.season}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Coins className="h-4 w-4 text-primary" />
+                      <span className="text-2xl font-black text-primary">{row.coins_in_prono}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Coins className="h-4 w-4 text-primary" />
-                    <span className="text-2xl font-black text-primary">{w.coins}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {(wallets?.length ?? 0) > 1 && (
-            <div className="flex items-center justify-between text-sm px-1">
-              <span className="text-muted-foreground">Total acumulado</span>
-              <span className="font-black text-primary">{totalCoins} 🪙</span>
-            </div>
-          )}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       ) : (
         <Card>
@@ -111,12 +107,9 @@ export default async function CoinsPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {[
-            { action: "Unirse a una competición", reward: "+100 🪙" },
+            { action: "Unirse a un prono", reward: "+100 🪙" },
             { action: "Marcador exacto", reward: "+3 🪙" },
             { action: "Resultado correcto", reward: "+1 🪙" },
-            { action: "Predicción especial acertada", reward: "+10 🪙" },
-            { action: "Racha de 3 exactos", reward: "+5 🪙 bonus" },
-            { action: "Racha de 5 exactos", reward: "+10 🪙 bonus" },
           ].map(({ action, reward }) => (
             <div key={action} className="flex items-center justify-between py-1">
               <span className="text-sm text-muted-foreground">{action}</span>
@@ -137,26 +130,34 @@ export default async function CoinsPage() {
         </TabsList>
 
         <TabsContent value="powerups" className="mt-6">
-          <PowerUpStore userId={user.id} userCoins={activeWallet?.coins ?? 0} />
+          <PowerUpStore
+            userId={user.id}
+            userCoins={(activeRow as any)?.coins_in_prono ?? 0}
+          />
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
           <Card>
             <CardContent className="pt-4 divide-y divide-border/50">
-              {transactions?.map(t => (
-                <div key={t.id} className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="text-sm font-medium">{t.reason}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t.competitions?.name && <span className="text-primary/70">{t.competitions.name} · </span>}
-                      {new Date(t.created_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
-                    </p>
+              {transactions?.map(t => {
+                const prono = (t as any).pronos
+                const comp = (t as any).competitions
+                return (
+                  <div key={t.id} className="flex items-center justify-between py-3">
+                    <div>
+                      <p className="text-sm font-medium">{t.reason}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {prono?.name && <span className="text-primary/70">{prono.name} · </span>}
+                        {comp?.name && !prono?.name && <span className="text-primary/70">{comp.name} · </span>}
+                        {new Date(t.created_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                    <span className={`font-black text-base ${t.type === "spend" ? "text-red-500" : "text-primary"}`}>
+                      {t.type === "spend" ? "-" : "+"}{t.amount} 🪙
+                    </span>
                   </div>
-                  <span className={`font-black text-base ${t.amount > 0 ? "text-primary" : "text-red-500"}`}>
-                    {t.amount > 0 ? "+" : ""}{t.amount} 🪙
-                  </span>
-                </div>
-              ))}
+                )
+              })}
               {!transactions?.length && (
                 <p className="text-center text-muted-foreground py-8">No hay transacciones aún.</p>
               )}

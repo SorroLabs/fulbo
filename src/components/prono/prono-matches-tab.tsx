@@ -1,16 +1,18 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MatchCard } from "@/components/competition/match-card"
 import { MatchListRow } from "@/components/competition/match-list-row"
+import { PowerUpModal } from "@/components/prono/power-up-modal"
 import { Eye, EyeOff, LayoutGrid, List } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
-import type { Match, Prediction } from "@/types"
+import type { Match, Prediction, PowerUpUse } from "@/types"
 
 interface Member {
   user_id: string
@@ -22,6 +24,10 @@ interface Props {
   members: Member[]
   predictions: Prediction[]
   userId: string | null
+  pronoId?: string
+  powerUpsEnabled?: boolean
+  coinsInProno?: number
+  myPowerUps?: PowerUpUse[]
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -35,10 +41,10 @@ const PHASE_LABELS: Record<string, string> = {
 }
 const PHASE_ORDER = ["groups", "round_of_32", "round_of_16", "quarterfinals", "semifinals", "third_place", "final"]
 
-function isLocked(match: Match) {
+function isLocked(match: Match, spyActive = false) {
   if (match.status !== "upcoming") return true
   const deadline = new Date(match.match_date)
-  deadline.setMinutes(deadline.getMinutes() - 20)
+  deadline.setMinutes(deadline.getMinutes() - (spyActive ? 2 : 20))
   return new Date() > deadline
 }
 
@@ -48,9 +54,20 @@ function TeamFlag({ name }: { name: string }) {
   return <img src={src} alt={name} className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
 }
 
-export function PronoMatchesTab({ matches, members, predictions, userId }: Props) {
+export function PronoMatchesTab({ matches, members, predictions, userId, pronoId, powerUpsEnabled, coinsInProno = 0, myPowerUps = [] }: Props) {
+  const router = useRouter()
   const [selected, setSelected] = useState<Match | null>(null)
+  const [powerUpMatch, setPowerUpMatch] = useState<Match | null>(null)
   const [view, setView] = useState<"grid" | "list">("grid")
+
+  // matchId -> set of power-up types active for current user
+  const myPowerUpsByMatch = new Map<string, Set<string>>()
+  for (const pu of myPowerUps) {
+    if (!myPowerUpsByMatch.has(pu.match_id)) myPowerUpsByMatch.set(pu.match_id, new Set())
+    myPowerUpsByMatch.get(pu.match_id)!.add(pu.type)
+  }
+
+  const hasSpy = (matchId: string) => myPowerUpsByMatch.get(matchId)?.has("spy") ?? false
 
   // Map: matchId -> userId -> prediction
   const predMap = new Map<string, Map<string, Prediction>>()
@@ -76,16 +93,27 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
   const selectedPreds = selected ? predMap.get(selected.id) : null
 
   function renderMatch(match: Match) {
-    const locked = isLocked(match)
+    const spy = hasSpy(match.id)
+    const locked = isLocked(match, spy)
+    const canUsePowerUps = !!pronoId && !!userId && powerUpsEnabled && match.status === "upcoming"
+
     if (!locked) {
       const eyeOff = <span title="Predicciones visibles 20 minutos antes de iniciar"><EyeOff className="h-4 w-4 text-muted-foreground/30" /></span>
       if (view === "grid") {
         return (
-          <MatchCard key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} eyeIcon={eyeOff} />
+          <MatchCard
+            key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
+            userId={userId} eyeIcon={eyeOff} lateDeadline={spy}
+            onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
+          />
         )
       }
       return (
-        <MatchListRow key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} eyeIcon={eyeOff} />
+        <MatchListRow
+          key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
+          userId={userId} eyeIcon={eyeOff} lateDeadline={spy}
+          onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
+        />
       )
     }
 
@@ -242,6 +270,20 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
           </div>
         ))}
       </div>
+
+      {pronoId && userId && powerUpMatch && (
+        <PowerUpModal
+          open={!!powerUpMatch}
+          onClose={() => setPowerUpMatch(null)}
+          match={powerUpMatch}
+          pronoId={pronoId}
+          coinsInProno={coinsInProno}
+          myPowerUps={myPowerUps.filter(p => p.match_id === powerUpMatch.id)}
+          members={members}
+          userId={userId}
+          onSuccess={() => router.refresh()}
+        />
+      )}
 
       <Dialog open={!!selected} onOpenChange={open => !open && setSelected(null)}>
         <DialogContent className="max-w-md w-full max-h-[80vh] overflow-y-auto">

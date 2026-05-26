@@ -56,6 +56,7 @@ create table public.pronos (
   name text not null,
   description text,
   is_public boolean not null default true,
+  power_ups_enabled boolean not null default true,
   invite_code text unique not null default upper(substr(md5(random()::text), 1, 8)),
   max_members integer not null default 100,
   status text not null default 'active' check (status in ('active', 'finished')),
@@ -69,7 +70,7 @@ create table public.prono_members (
   user_id uuid references public.profiles on delete cascade not null,
   total_points integer not null default 0,
   rank integer,
-  coins_in_prono integer not null default 0,
+  coins_in_prono integer not null default 100,
   joined_at timestamptz default now(),
   unique(prono_id, user_id)
 );
@@ -120,6 +121,7 @@ create table public.coin_transactions (
   reason text not null,
   competition_id uuid references public.competitions on delete set null,
   match_id uuid references public.matches on delete set null,
+  prono_id uuid references public.pronos on delete set null,
   created_at timestamptz default now()
 );
 
@@ -127,12 +129,22 @@ create table public.coin_transactions (
 create table public.power_up_uses (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references public.profiles on delete cascade not null,
+  prono_id uuid references public.pronos on delete cascade not null,
   match_id uuid references public.matches on delete cascade not null,
   type text not null check (type in ('late_change', 'double_points', 'spy', 'wildcard')),
   coins_spent integer not null,
   target_user_id uuid references public.profiles on delete set null,
   used_at timestamptz default now(),
-  unique(user_id, match_id, type)
+  unique(user_id, prono_id, match_id, type)
+);
+
+-- Power-up config per prono (owner can override default costs/availability)
+create table public.prono_powerup_config (
+  prono_id uuid not null references public.pronos on delete cascade,
+  type text not null check (type in ('late_change', 'double_points', 'spy', 'wildcard')),
+  cost integer not null check (cost >= 0),
+  enabled boolean not null default true,
+  primary key (prono_id, type)
 );
 
 -- Duels
@@ -180,6 +192,7 @@ alter table public.special_predictions enable row level security;
 alter table public.leaderboard_snapshots enable row level security;
 alter table public.coin_transactions enable row level security;
 alter table public.power_up_uses enable row level security;
+alter table public.prono_powerup_config enable row level security;
 alter table public.duels enable row level security;
 alter table public.competition_participants enable row level security;
 
@@ -219,10 +232,17 @@ create policy "prono_members_read" on public.prono_members for select using (
 create policy "prono_members_insert" on public.prono_members for insert with check (auth.uid() = user_id);
 create policy "prono_members_delete" on public.prono_members for delete using (auth.uid() = user_id);
 
--- Predictions: users see their own, others see only after match is locked
+-- Predictions: users see their own, others see only after match is locked (or via spy power-up)
 create policy "predictions_own_read" on public.predictions for select using (
   user_id = auth.uid() or
-  exists (select 1 from public.matches where id = match_id and status = 'finished')
+  exists (select 1 from public.matches where id = match_id and status = 'finished') or
+  exists (
+    select 1 from public.power_up_uses pu
+    where pu.user_id = auth.uid()
+      and pu.match_id = predictions.match_id
+      and pu.type = 'spy'
+      and pu.target_user_id = predictions.user_id
+  )
 );
 create policy "predictions_own_write" on public.predictions for all using (auth.uid() = user_id);
 
@@ -239,8 +259,23 @@ create policy "snapshots_public_read" on public.leaderboard_snapshots for select
 -- Coin transactions: own only
 create policy "coins_own_read" on public.coin_transactions for select using (auth.uid() = user_id);
 
--- Power-up uses
-create policy "powerups_own" on public.power_up_uses for all using (auth.uid() = user_id);
+-- Power-up uses: own read/write; prono members see power-ups after match starts
+create policy "powerups_own_write" on public.power_up_uses for all using (auth.uid() = user_id);
+create policy "powerups_prono_read_after_lock" on public.power_up_uses for select using (
+  auth.uid() = user_id or
+  (
+    exists (select 1 from public.prono_members where prono_id = power_up_uses.prono_id and user_id = auth.uid()) and
+    exists (select 1 from public.matches where id = power_up_uses.match_id and status != 'upcoming')
+  )
+);
+
+-- Power-up config: prono members read, owner write
+create policy "powerup_config_member_read" on public.prono_powerup_config for select using (
+  exists (select 1 from public.prono_members where prono_id = prono_powerup_config.prono_id and user_id = auth.uid())
+);
+create policy "powerup_config_owner_write" on public.prono_powerup_config for all using (
+  exists (select 1 from public.pronos where id = prono_powerup_config.prono_id and owner_id = auth.uid())
+);
 
 -- Duels
 create policy "duels_participants" on public.duels for select using (
@@ -350,6 +385,9 @@ declare
   v_pred predictions%rowtype;
   v_pts integer;
   v_double boolean;
+  v_wildcard boolean;
+  v_coin_amount integer;
+  v_pm record;
 begin
   select * into v_match from public.matches where id = p_match_id and status = 'finished';
   if not found then return; end if;
@@ -361,7 +399,7 @@ begin
       v_match.phase
     );
 
-    -- Check for double_points power-up
+    -- Check double_points power-up (competition-wide effect)
     select exists(
       select 1 from public.power_up_uses
       where user_id = v_pred.user_id and match_id = p_match_id and type = 'double_points'
@@ -371,10 +409,12 @@ begin
 
     -- Apply wildcard: if 0 pts, give result points
     if v_pts = 0 then
-      if exists(
+      select exists(
         select 1 from public.power_up_uses
         where user_id = v_pred.user_id and match_id = p_match_id and type = 'wildcard'
-      ) then
+      ) into v_wildcard;
+
+      if v_wildcard then
         case v_match.phase
           when 'groups' then v_pts := 1;
           when 'final', 'semifinals' then v_pts := 3;
@@ -385,20 +425,95 @@ begin
 
     update public.predictions set points_earned = v_pts where id = v_pred.id;
 
-    -- Award coins for correct predictions
+    -- Determine coin reward
+    v_coin_amount := 0;
     if v_pts > 0 then
       if v_pred.home_score = v_match.home_score and v_pred.away_score = v_match.away_score then
-        insert into public.coin_transactions (user_id, amount, type, reason, competition_id, match_id)
-        values (v_pred.user_id, 3, 'earn', 'Marcador exacto', v_pred.competition_id, p_match_id);
-        update public.profiles set coins = coins + 3 where id = v_pred.user_id;
+        v_coin_amount := 3;
       else
-        insert into public.coin_transactions (user_id, amount, type, reason, competition_id, match_id)
-        values (v_pred.user_id, 1, 'earn', 'Resultado correcto', v_pred.competition_id, p_match_id);
-        update public.profiles set coins = coins + 1 where id = v_pred.user_id;
+        v_coin_amount := 1;
       end if;
     end if;
 
+    -- Credit coins_in_prono for every prono the user is in for this competition
+    if v_coin_amount > 0 then
+      for v_pm in
+        select pm.id as pm_id, pm.prono_id
+        from public.prono_members pm
+        join public.pronos po on po.id = pm.prono_id
+        where pm.user_id = v_pred.user_id
+          and po.competition_id = v_pred.competition_id
+      loop
+        update public.prono_members
+        set coins_in_prono = coins_in_prono + v_coin_amount
+        where id = v_pm.pm_id;
+
+        insert into public.coin_transactions (user_id, amount, type, reason, competition_id, match_id, prono_id)
+        values (
+          v_pred.user_id,
+          v_coin_amount,
+          'earn',
+          case when v_coin_amount = 3 then 'Marcador exacto' else 'Resultado correcto' end,
+          v_pred.competition_id,
+          p_match_id,
+          v_pm.prono_id
+        );
+      end loop;
+    end if;
+
     -- Update prono_members total_points
+    update public.prono_members pm
+    set total_points = (
+      select coalesce(sum(p.points_earned), 0)
+      from public.predictions p
+      where p.user_id = v_pred.user_id
+        and p.competition_id = v_pred.competition_id
+        and p.points_earned is not null
+    )
+    where pm.user_id = v_pred.user_id
+      and exists (
+        select 1 from public.pronos po
+        where po.id = pm.prono_id and po.competition_id = v_pred.competition_id
+      );
+  end loop;
+end;
+$$;
+
+-- Revert a match score (admin use: reset to upcoming)
+create or replace function public.revert_match_score(p_match_id uuid)
+returns void language plpgsql security definer as $$
+declare
+  v_match matches%rowtype;
+  v_pred predictions%rowtype;
+begin
+  select * into v_match from public.matches where id = p_match_id;
+  if not found then return; end if;
+
+  update public.matches
+  set status = 'upcoming', home_score = null, away_score = null
+  where id = p_match_id;
+
+  for v_pred in select * from public.predictions where match_id = p_match_id and points_earned is not null loop
+    update public.predictions set points_earned = null where id = v_pred.id;
+
+    delete from public.coin_transactions
+    where match_id = p_match_id and user_id = v_pred.user_id;
+
+    -- Recalculate coins_in_prono from remaining transactions (100 = initial grant)
+    update public.prono_members pm
+    set coins_in_prono = 100 + coalesce((
+      select sum(case when ct.type in ('earn', 'admin_grant') then ct.amount else -ct.amount end)
+      from public.coin_transactions ct
+      where ct.user_id = v_pred.user_id
+        and ct.prono_id = pm.prono_id
+    ), 0)
+    where pm.user_id = v_pred.user_id
+      and exists (
+        select 1 from public.pronos po
+        where po.id = pm.prono_id and po.competition_id = v_pred.competition_id
+      );
+
+    -- Recalculate total_points
     update public.prono_members pm
     set total_points = (
       select coalesce(sum(p.points_earned), 0)

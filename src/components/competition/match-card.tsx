@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getTeamFlag } from "@/lib/team-flags"
 import { savePrediction } from "@/app/actions/predictions"
-import { Check, Loader2 } from "lucide-react"
+import { Check, Loader2, Zap } from "lucide-react"
 import { toast } from "sonner"
 import type { Match, Prediction } from "@/types"
 
@@ -29,9 +29,11 @@ interface MatchCardProps {
   prediction: Prediction | null
   userId: string | null
   eyeIcon?: React.ReactNode
+  onPowerUp?: () => void
+  lateDeadline?: boolean
 }
 
-export function MatchCard({ match, prediction, userId, eyeIcon }: MatchCardProps) {
+export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateDeadline }: MatchCardProps) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -39,7 +41,7 @@ export function MatchCard({ match, prediction, userId, eyeIcon }: MatchCardProps
 
   const isLocked = match.status !== "upcoming" || !userId
   const deadline = new Date(match.match_date)
-  deadline.setMinutes(deadline.getMinutes() - 20)
+  deadline.setMinutes(deadline.getMinutes() - (lateDeadline ? 2 : 20))
   const isPastDeadline = new Date() > deadline
   const canEdit = !isLocked && !isPastDeadline
 
@@ -162,7 +164,15 @@ export function MatchCard({ match, prediction, userId, eyeIcon }: MatchCardProps
               )}
             </div>
           ) : (
-            <div className="w-full flex justify-end" style={{ minHeight: 36, alignItems: "center" }}>
+            <div className="w-full flex items-center justify-between" style={{ minHeight: 36 }}>
+              {onPowerUp ? (
+                <button
+                  onClick={onPowerUp}
+                  className="flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors font-medium"
+                >
+                  <Zap className="h-3.5 w-3.5" /> Power-ups
+                </button>
+              ) : <span />}
               {canEdit && (
                 isPending
                   ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getTeamFlag } from "@/lib/team-flags"
 import { savePrediction } from "@/app/actions/predictions"
-import { Check, Loader2 } from "lucide-react"
+import { Check, Loader2, Zap } from "lucide-react"
 import { toast } from "sonner"
 import type { Match, Prediction } from "@/types"
 
@@ -21,9 +21,11 @@ interface Props {
   prediction: Prediction | null
   userId: string | null
   eyeIcon?: React.ReactNode
+  onPowerUp?: () => void
+  lateDeadline?: boolean
 }
 
-export function MatchListRow({ match, prediction, userId, eyeIcon }: Props) {
+export function MatchListRow({ match, prediction, userId, eyeIcon, onPowerUp, lateDeadline }: Props) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -31,7 +33,7 @@ export function MatchListRow({ match, prediction, userId, eyeIcon }: Props) {
 
   const isLocked = match.status !== "upcoming" || !userId
   const deadline = new Date(match.match_date)
-  deadline.setMinutes(deadline.getMinutes() - 20)
+  deadline.setMinutes(deadline.getMinutes() - (lateDeadline ? 2 : 20))
   const canEdit = !isLocked && new Date() <= deadline
 
   const handleSave = (h: string, a: string) => {
@@ -119,7 +121,7 @@ export function MatchListRow({ match, prediction, userId, eyeIcon }: Props) {
         <span className="text-sm font-semibold truncate">{match.away_team}</span>
       </div>
 
-      {/* Right side: prediction result, save icon, badge, eye */}
+      {/* Right side: prediction result, save icon, power-up, badge, eye */}
       <div className="shrink-0 flex items-center gap-1.5">
         {match.status === "finished" && prediction ? (
           <>
@@ -143,6 +145,11 @@ export function MatchListRow({ match, prediction, userId, eyeIcon }: Props) {
               ? <Check className="h-3.5 w-3.5 text-primary" />
               : null
         ) : null}
+        {onPowerUp && (
+          <button onClick={onPowerUp} className="text-primary/60 hover:text-primary transition-colors" title="Power-ups">
+            <Zap className="h-3.5 w-3.5" />
+          </button>
+        )}
         <Badge variant={statusColors[match.status]} className="text-xs hidden sm:flex">
           {match.status === "live" ? "🔴" : match.status === "finished" ? "Fin." : "Próx."}
         </Badge>

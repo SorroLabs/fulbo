@@ -60,13 +60,6 @@ export interface Prono {
   member_count?: number
 }
 
-export interface CompetitionWallet {
-  id: string
-  user_id: string
-  competition_id: string
-  coins: number
-  created_at: string
-}
 
 export interface PronoMember {
   id: string
@@ -140,11 +133,19 @@ export type PowerUpType = "late_change" | "double_points" | "spy" | "wildcard"
 export interface PowerUpUse {
   id: string
   user_id: string
+  prono_id: string
   match_id: string
   type: PowerUpType
   coins_spent: number
   target_user_id: string | null
   used_at: string
+}
+
+export interface PronoPowerUpConfig {
+  prono_id: string
+  type: PowerUpType
+  cost: number
+  enabled: boolean
 }
 
 export interface Duel {
@@ -189,8 +190,22 @@ export const SPECIAL_PREDICTION_POINTS = {
 export const POWER_UP_COSTS: Record<PowerUpType, number> = {
   late_change: 20,
   double_points: 15,
-  spy: 10,
+  spy: 15,
   wildcard: 25,
+}
+
+export const POWER_UP_LABELS: Record<PowerUpType, string> = {
+  late_change: "Cambio tardío",
+  double_points: "Doble puntos",
+  spy: "Espía",
+  wildcard: "Comodín",
+}
+
+export const POWER_UP_DESCRIPTIONS: Record<PowerUpType, string> = {
+  late_change: "Extendé el plazo de tu predicción hasta 2 minutos antes del partido (máx. 3 por torneo).",
+  double_points: "Duplicá tus puntos si acertás el resultado.",
+  spy: "Mirá la predicción de un rival antes de que cierre el plazo.",
+  wildcard: "Si errás el resultado, igual ganás 1 punto.",
 }
 
 export const COIN_REWARDS = {

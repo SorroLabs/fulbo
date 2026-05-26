@@ -3,30 +3,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
-async function ensureWallet(supabase: any, userId: string, competitionId: string) {
-  const { data: existing } = await supabase
-    .from("competition_wallets")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("competition_id", competitionId)
-    .single()
-
-  if (!existing) {
-    await supabase.from("competition_wallets").insert({
-      user_id: userId,
-      competition_id: competitionId,
-      coins: 100,
-    })
-    await supabase.from("coin_transactions").insert({
-      user_id: userId,
-      competition_id: competitionId,
-      amount: 100,
-      type: "earn",
-      reason: "Bienvenida a la competición",
-    })
-  }
-}
-
 export async function createProno({
   competitionId,
   name,
@@ -52,8 +28,7 @@ export async function createProno({
 
   if (error) return { error: error.message }
 
-  await supabase.from("prono_members").insert({ prono_id: data.id, user_id: user.id })
-  await ensureWallet(supabase, user.id, competitionId)
+  await supabase.from("prono_members").insert({ prono_id: data.id, user_id: user.id, coins_in_prono: 100 })
   revalidatePath("/pronos")
   return { data }
 }
@@ -76,12 +51,11 @@ export async function joinProno({ pronoId }: { pronoId: string }) {
 
   const { error } = await supabase
     .from("prono_members")
-    .insert({ prono_id: pronoId, user_id: user.id })
+    .insert({ prono_id: pronoId, user_id: user.id, coins_in_prono: 100 })
 
   if (error?.code === "23505") return { error: "Ya sos miembro de este prono" }
   if (error) return { error: "Error al unirse al prono" }
 
-  await ensureWallet(supabase, user.id, prono.competition_id)
   revalidatePath("/pronos")
   revalidatePath(`/pronos/${pronoId}`)
   return { success: true }

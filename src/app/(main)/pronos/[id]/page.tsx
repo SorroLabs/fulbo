@@ -35,7 +35,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
 
   const memberIds = (members ?? []).map((m: any) => m.user_id)
 
-  const [{ data: matches }, { data: allPredictions }] = await Promise.all([
+  const [{ data: matches }, { data: allPredictions }, { data: myPowerUps }, { data: myMembership }] = await Promise.all([
     supabase.from("matches").select("*").eq("competition_id", prono.competition_id)
       .not("home_team", "like", "Ganador%")
       .order("match_date"),
@@ -44,6 +44,12 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           .eq("competition_id", prono.competition_id)
           .in("user_id", memberIds)
       : { data: [] },
+    user
+      ? supabase.from("power_up_uses").select("*").eq("prono_id", prono.id).eq("user_id", user.id)
+      : { data: [] },
+    user
+      ? supabase.from("prono_members").select("coins_in_prono").eq("prono_id", prono.id).eq("user_id", user.id).single()
+      : { data: null },
   ])
 
   const isMember = members?.some((m: any) => m.user_id === user?.id)
@@ -116,6 +122,10 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
             members={(members ?? []).map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
             predictions={allPredictions ?? []}
             userId={user?.id ?? null}
+            pronoId={prono.id}
+            powerUpsEnabled={prono.power_ups_enabled ?? true}
+            coinsInProno={(myMembership as any)?.coins_in_prono ?? 0}
+            myPowerUps={(myPowerUps as any) ?? []}
           />
         </TabsContent>
 
