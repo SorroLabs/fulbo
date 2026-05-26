@@ -155,7 +155,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
               <div className="flex-1 flex flex-col items-center gap-2">
                 <img src={getTeamFlag(match.home_team) ?? undefined} alt={match.home_team}
                   className="rounded shadow-sm object-cover" style={{ width: 40, height: 28, flexShrink: 0 }} />
-                <span className="text-sm font-semibold text-center leading-tight">{match.home_team}</span>
+                <span className="text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</span>
               </div>
               <div className="shrink-0 flex items-center justify-center" style={{ height: 48 }}>
                 <div className="flex items-center gap-1.5 font-black text-2xl">
@@ -173,7 +173,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
               <div className="flex-1 flex flex-col items-center gap-2">
                 <img src={getTeamFlag(match.away_team) ?? undefined} alt={match.away_team}
                   className="rounded shadow-sm object-cover" style={{ width: 40, height: 28, flexShrink: 0 }} />
-                <span className="text-sm font-semibold text-center leading-tight">{match.away_team}</span>
+                <span className="text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</span>
               </div>
             </div>
 

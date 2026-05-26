@@ -85,7 +85,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
         <div className="flex items-center gap-3">
           <div className="flex-1 flex flex-col items-center gap-2">
             <TeamFlag name={match.home_team} logo={match.home_team_logo} />
-            <span className="text-sm font-semibold text-center leading-tight">{match.home_team}</span>
+            <span className="text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</span>
           </div>
 
           <div className="shrink-0 flex items-center justify-center" style={{ height: 48 }}>
@@ -120,7 +120,7 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
 
           <div className="flex-1 flex flex-col items-center gap-2">
             <TeamFlag name={match.away_team} logo={match.away_team_logo} />
-            <span className="text-sm font-semibold text-center leading-tight">{match.away_team}</span>
+            <span className="text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</span>
           </div>
         </div>
 
