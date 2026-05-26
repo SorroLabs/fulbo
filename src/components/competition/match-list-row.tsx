@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import type React from "react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getTeamFlag } from "@/lib/team-flags"
@@ -19,9 +20,10 @@ interface Props {
   match: Match
   prediction: Prediction | null
   userId: string | null
+  eyeIcon?: React.ReactNode
 }
 
-export function MatchListRow({ match, prediction, userId }: Props) {
+export function MatchListRow({ match, prediction, userId, eyeIcon }: Props) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -50,14 +52,24 @@ export function MatchListRow({ match, prediction, userId }: Props) {
 
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const
 
+  const tint = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
+    ? prediction.home_score === match.home_score && prediction.away_score === match.away_score
+      ? "#D4FFB3"
+      : Math.sign(match.home_score - match.away_score) === Math.sign(prediction.home_score - prediction.away_score)
+        ? "#FFF3B1"
+        : "#FFBEB2"
+    : undefined
+
   return (
-    <div className={cn(
-      "flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all",
-      match.status === "live" && "border-primary/50 bg-primary/5",
-      saved && match.status === "upcoming" && "border-primary/20",
-      match.status === "finished" && "border-border/50",
-      match.status === "upcoming" && !saved && "border-border/50",
-    )}>
+    <div
+      className={cn(
+        "flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all",
+        match.status === "live" && "border-primary/50 bg-primary/5",
+        saved && match.status === "upcoming" && "border-primary/20",
+        (match.status === "finished" || (match.status === "upcoming" && !saved)) && "border-border/50",
+      )}
+      style={tint ? { backgroundColor: tint } : undefined}
+    >
       {/* Date + group */}
       <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
         <span className="text-xs text-muted-foreground text-center whitespace-nowrap">
@@ -107,8 +119,8 @@ export function MatchListRow({ match, prediction, userId }: Props) {
         <span className="text-sm font-semibold truncate">{match.away_team}</span>
       </div>
 
-      {/* Right side: prediction result or save icon */}
-      <div className="shrink-0 flex items-center gap-2">
+      {/* Right side: prediction result, save icon, badge, eye */}
+      <div className="shrink-0 flex items-center gap-1.5">
         {match.status === "finished" && prediction ? (
           <>
             <span className="text-xs text-muted-foreground hidden sm:inline">
@@ -134,6 +146,7 @@ export function MatchListRow({ match, prediction, userId }: Props) {
         <Badge variant={statusColors[match.status]} className="text-xs hidden sm:flex">
           {match.status === "live" ? "🔴" : match.status === "finished" ? "Fin." : "Próx."}
         </Badge>
+        {eyeIcon}
       </div>
     </div>
   )

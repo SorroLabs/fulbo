@@ -85,43 +85,46 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
         )
       }
       return (
-        <div key={match.id} className="relative">
-          <MatchListRow match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} />
-          <span title="Predicciones visibles 20 minutos antes de iniciar" className="absolute top-3 right-3 cursor-default">
-            <EyeOff className="h-4 w-4 text-muted-foreground/30" />
-          </span>
-        </div>
+        <MatchListRow key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} eyeIcon={eyeOff} />
       )
     }
 
     const matchPreds = predMap.get(match.id)
+    const myPredLocked = myPredMap.get(match.id)
+    const tintLocked = match.status === "finished" && myPredLocked && match.home_score != null && match.away_score != null
+      ? myPredLocked.home_score === match.home_score && myPredLocked.away_score === match.away_score
+        ? "#D4FFB3"
+        : Math.sign(match.home_score - match.away_score) === Math.sign(myPredLocked.home_score - myPredLocked.away_score)
+          ? "#FFF3B1"
+          : "#FFBEB2"
+      : undefined
+
     if (view === "list") {
+      const listDateStr = new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
       return (
         <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left">
-          <div className={cn(
-            "flex items-center gap-3 py-2.5 px-3 rounded-xl border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
-          )}>
+          <div
+            className="flex items-center gap-3 py-2.5 px-3 rounded-xl border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
+            style={tintLocked ? { backgroundColor: tintLocked } : undefined}
+          >
             <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
-              <span className="text-xs text-muted-foreground text-center leading-tight">
-                {new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short" })}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {new Date(match.match_date).toLocaleString("es", { hour: "2-digit", minute: "2-digit" })}
-              </span>
+              <span className="text-xs text-muted-foreground text-center whitespace-nowrap">{listDateStr}</span>
               {match.group_name && <span className="text-xs text-muted-foreground/60">{match.group_name}</span>}
             </div>
             <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
               <span className="text-sm font-semibold truncate text-right">{match.home_team}</span>
               <TeamFlag name={match.home_team} />
             </div>
-            <span className="font-black text-lg w-16 text-center shrink-0">
-              {match.status === "finished" ? `${match.home_score}-${match.away_score}` : "vs"}
-            </span>
+            <div className="shrink-0 w-20 flex items-center justify-center">
+              <span className="font-black text-lg text-center">
+                {match.status === "finished" ? `${match.home_score} - ${match.away_score}` : "vs"}
+              </span>
+            </div>
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <TeamFlag name={match.away_team} />
               <span className="text-sm font-semibold truncate">{match.away_team}</span>
             </div>
-            <div className="shrink-0 flex items-center gap-2">
+            <div className="shrink-0 flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">{matchPreds?.size ?? 0}/{members.length}</span>
               <Eye className="h-4 w-4 text-primary" />
             </div>
