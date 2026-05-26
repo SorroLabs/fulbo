@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import type React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -27,9 +28,10 @@ interface MatchCardProps {
   match: Match
   prediction: Prediction | null
   userId: string | null
+  eyeIcon?: React.ReactNode
 }
 
-export function MatchCard({ match, prediction, userId }: MatchCardProps) {
+export function MatchCard({ match, prediction, userId, eyeIcon }: MatchCardProps) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -71,13 +73,14 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
     )}>
       <CardContent>
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs text-muted-foreground">{dateStr}</span>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <span className="text-xs text-muted-foreground min-w-0 truncate">{dateStr}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
             {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}
             <Badge variant={statusColors[match.status]} className="text-xs">
               {match.status === "live" ? "🔴 EN VIVO" : match.status === "finished" ? "Finalizado" : "Próximo"}
             </Badge>
+            {eyeIcon}
           </div>
         </div>
 
@@ -119,11 +122,11 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
             <TeamFlag name={match.away_team} logo={match.away_team_logo} />
           </div>
         </div>
-        {/* Names row — minHeight reserves space for 2 lines so all cards are same height */}
+        {/* Names row — div+flex centers text vertically so blank space (1-line names) is distributed evenly */}
         <div className="flex gap-3">
-          <span className="flex-1 text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</span>
+          <div className="flex-1 flex items-center justify-center text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</div>
           <div className="w-32 shrink-0" />
-          <span className="flex-1 text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</span>
+          <div className="flex-1 flex items-center justify-center text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</div>
         </div>
 
         {/* Footer — always 36px tall to keep all cards uniform */}

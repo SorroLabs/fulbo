@@ -78,16 +78,16 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
   function renderMatch(match: Match) {
     const locked = isLocked(match)
     if (!locked) {
-      const card = view === "grid"
-        ? <MatchCard match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} />
-        : <MatchListRow match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} />
+      const eyeOff = <span title="Predicciones visibles 20 minutos antes de iniciar"><EyeOff className="h-4 w-4 text-muted-foreground/30" /></span>
+      if (view === "grid") {
+        return (
+          <MatchCard key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} eyeIcon={eyeOff} />
+        )
+      }
       return (
         <div key={match.id} className="relative">
-          {card}
-          <span
-            title="Predicciones visibles 20 minutos antes de iniciar"
-            className="absolute top-3 right-3 cursor-default"
-          >
+          <MatchListRow match={match} prediction={myPredMap.get(match.id) ?? null} userId={userId} />
+          <span title="Predicciones visibles 20 minutos antes de iniciar" className="absolute top-3 right-3 cursor-default">
             <EyeOff className="h-4 w-4 text-muted-foreground/30" />
           </span>
         </div>
@@ -135,17 +135,18 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
     })
     return (
-      <button key={match.id} onClick={() => setSelected(match)} className="relative w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
+      <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
         <Card className="border-primary/20 hover:border-primary/40 transition-colors">
           <CardContent>
-            {/* Header — Eye moved out to avoid overflow on narrow cards */}
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground">{dateStr}</span>
-              <div className="flex items-center gap-2 pr-5">
+            {/* Header — date truncates if narrow, right side never wraps */}
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <span className="text-xs text-muted-foreground min-w-0 truncate">{dateStr}</span>
+              <div className="flex items-center gap-1.5 shrink-0">
                 {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}
                 <Badge variant={match.status === "finished" ? "outline" : "secondary"} className="text-xs">
                   {match.status === "finished" ? "Finalizado" : "Próximo"}
                 </Badge>
+                <Eye className="h-4 w-4 text-primary" />
               </div>
             </div>
 
@@ -173,11 +174,11 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
                   className="rounded shadow-sm object-cover" style={{ width: 40, height: 28, flexShrink: 0 }} />
               </div>
             </div>
-            {/* Names */}
+            {/* Names — flex items-center centers text vertically within minHeight */}
             <div className="flex gap-3">
-              <span className="flex-1 text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</span>
+              <div className="flex-1 flex items-center justify-center text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</div>
               <div className="w-32 shrink-0" />
-              <span className="flex-1 text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</span>
+              <div className="flex-1 flex items-center justify-center text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</div>
             </div>
 
             {/* Footer */}
@@ -188,7 +189,6 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
             </div>
           </CardContent>
         </Card>
-        <Eye className="absolute top-3 right-3 h-4 w-4 text-primary pointer-events-none" />
       </button>
     )
   }
