@@ -81,14 +81,12 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Teams + score — center is always 48px tall */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 flex flex-col items-center gap-2">
+        {/* Flags + score (same row so flags always align with score) */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex-1 flex justify-center">
             <TeamFlag name={match.home_team} logo={match.home_team_logo} />
-            <span className="text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</span>
           </div>
-
-          <div className="shrink-0 flex items-center justify-center" style={{ height: 48 }}>
+          <div className="w-32 shrink-0 flex items-center justify-center" style={{ height: 48 }}>
             {match.status === "finished" ? (
               <div className="flex items-center gap-1.5 font-black text-2xl">
                 <span>{match.home_score}</span>
@@ -117,11 +115,15 @@ export function MatchCard({ match, prediction, userId }: MatchCardProps) {
               </div>
             )}
           </div>
-
-          <div className="flex-1 flex flex-col items-center gap-2">
+          <div className="flex-1 flex justify-center">
             <TeamFlag name={match.away_team} logo={match.away_team_logo} />
-            <span className="text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</span>
           </div>
+        </div>
+        {/* Names row — minHeight reserves space for 2 lines so all cards are same height */}
+        <div className="flex gap-3">
+          <span className="flex-1 text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</span>
+          <div className="w-32 shrink-0" />
+          <span className="flex-1 text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</span>
         </div>
 
         {/* Footer — always 36px tall to keep all cards uniform */}

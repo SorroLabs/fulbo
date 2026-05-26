@@ -135,29 +135,27 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
     })
     return (
-      <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
+      <button key={match.id} onClick={() => setSelected(match)} className="relative w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
         <Card className="border-primary/20 hover:border-primary/40 transition-colors">
           <CardContent>
-            {/* Header */}
+            {/* Header — Eye moved out to avoid overflow on narrow cards */}
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-muted-foreground">{dateStr}</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pr-5">
                 {match.group_name && <span className="text-xs text-muted-foreground">{match.group_name}</span>}
                 <Badge variant={match.status === "finished" ? "outline" : "secondary"} className="text-xs">
                   {match.status === "finished" ? "Finalizado" : "Próximo"}
                 </Badge>
-                <Eye className="h-4 w-4 text-primary" />
               </div>
             </div>
 
-            {/* Teams + score — same layout as MatchCard */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 flex flex-col items-center gap-2">
+            {/* Flags + score */}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex-1 flex justify-center">
                 <img src={getTeamFlag(match.home_team) ?? undefined} alt={match.home_team}
                   className="rounded shadow-sm object-cover" style={{ width: 40, height: 28, flexShrink: 0 }} />
-                <span className="text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</span>
               </div>
-              <div className="shrink-0 flex items-center justify-center" style={{ height: 48 }}>
+              <div className="w-32 shrink-0 flex items-center justify-center" style={{ height: 48 }}>
                 <div className="flex items-center gap-1.5 font-black text-2xl">
                   {match.status === "finished" ? (
                     <>
@@ -170,14 +168,19 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
                   )}
                 </div>
               </div>
-              <div className="flex-1 flex flex-col items-center gap-2">
+              <div className="flex-1 flex justify-center">
                 <img src={getTeamFlag(match.away_team) ?? undefined} alt={match.away_team}
                   className="rounded shadow-sm object-cover" style={{ width: 40, height: 28, flexShrink: 0 }} />
-                <span className="text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</span>
               </div>
             </div>
+            {/* Names */}
+            <div className="flex gap-3">
+              <span className="flex-1 text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</span>
+              <div className="w-32 shrink-0" />
+              <span className="flex-1 text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</span>
+            </div>
 
-            {/* Footer — same height as MatchCard footer */}
+            {/* Footer */}
             <div className="mt-3 flex items-center justify-center" style={{ minHeight: 36 }}>
               <span className="text-xs text-primary/70">
                 {matchPreds?.size ?? 0} de {members.length} predicciones · tap para ver
@@ -185,6 +188,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
             </div>
           </CardContent>
         </Card>
+        <Eye className="absolute top-3 right-3 h-4 w-4 text-primary pointer-events-none" />
       </button>
     )
   }
