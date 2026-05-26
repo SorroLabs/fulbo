@@ -65,12 +65,23 @@ export function MatchCard({ match, prediction, userId, eyeIcon }: MatchCardProps
     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
   })
 
+  const tint = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
+    ? prediction.home_score === match.home_score && prediction.away_score === match.away_score
+      ? "#D4FFB3"
+      : Math.sign(match.home_score - match.away_score) === Math.sign(prediction.home_score - prediction.away_score)
+        ? "#FFF3B1"
+        : "#FFBEB2"
+    : undefined
+
   return (
-    <Card className={cn(
-      "transition-all",
-      match.status === "live" && "border-primary/50 shadow-md shadow-primary/10",
-      saved && match.status === "upcoming" && "border-primary/20"
-    )}>
+    <Card
+      className={cn(
+        "transition-all",
+        match.status === "live" && "border-primary/50 shadow-md shadow-primary/10",
+        saved && match.status === "upcoming" && "border-primary/20"
+      )}
+      style={tint ? { backgroundColor: tint } : undefined}
+    >
       <CardContent>
         {/* Header */}
         <div className="flex items-center justify-between mb-3 gap-2">

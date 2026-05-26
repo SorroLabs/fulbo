@@ -134,9 +134,17 @@ export function PronoMatchesTab({ matches, members, predictions, userId }: Props
     const dateStr = new Date(match.match_date).toLocaleString("es", {
       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
     })
+    const myPred = myPredMap.get(match.id)
+    const tint = match.status === "finished" && myPred && match.home_score != null && match.away_score != null
+      ? myPred.home_score === match.home_score && myPred.away_score === match.away_score
+        ? "#D4FFB3"
+        : Math.sign(match.home_score - match.away_score) === Math.sign(myPred.home_score - myPred.away_score)
+          ? "#FFF3B1"
+          : "#FFBEB2"
+      : undefined
     return (
       <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
-        <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+        <Card className="border-primary/20 hover:border-primary/40 transition-colors" style={tint ? { backgroundColor: tint } : undefined}>
           <CardContent>
             {/* Header — date truncates if narrow, right side never wraps */}
             <div className="flex items-center justify-between mb-3 gap-2">
