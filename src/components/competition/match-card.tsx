@@ -67,12 +67,12 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
   })
 
-  const tint = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
+  const tintClass = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
     ? prediction.home_score === match.home_score && prediction.away_score === match.away_score
-      ? "#D4FFB3"
+      ? "bg-green-100 dark:bg-green-950/60"
       : Math.sign(match.home_score - match.away_score) === Math.sign(prediction.home_score - prediction.away_score)
-        ? "#FFF3B1"
-        : "#FFBEB2"
+        ? "bg-yellow-100 dark:bg-yellow-950/60"
+        : "bg-red-100 dark:bg-red-950/50"
     : undefined
 
   return (
@@ -80,9 +80,9 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
       className={cn(
         "transition-all",
         match.status === "live" && "border-primary/50 shadow-md shadow-primary/10",
-        saved && match.status === "upcoming" && "border-primary/20"
+        saved && match.status === "upcoming" && "border-primary/20",
+        tintClass
       )}
-      style={tint ? { backgroundColor: tint } : undefined}
     >
       <CardContent>
         {/* Header */}
@@ -116,7 +116,7 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
                   onChange={e => { setHome(e.target.value.replace(/\D/g, "").slice(0, 2)); setSaved(false) }}
                   onBlur={handleBlur}
                   disabled={!canEdit}
-                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-background text-foreground outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
                   style={{ textAlign: "center", padding: 0 }}
                 />
                 <span className="text-muted-foreground font-bold">-</span>
@@ -125,7 +125,7 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
                   onChange={e => { setAway(e.target.value.replace(/\D/g, "").slice(0, 2)); setSaved(false) }}
                   onBlur={handleBlur}
                   disabled={!canEdit}
-                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-white outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-background text-foreground outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
                   style={{ textAlign: "center", padding: 0 }}
                 />
               </div>
