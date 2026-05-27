@@ -140,13 +140,3 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
-:root {
-  --tint-exact:  #d4ffb3;
-  --tint-result: #fff3b1;
-  --tint-wrong:  #ffbeb2;
-}
-.dark {
-  --tint-exact:  rgb(5 46 22 / 0.6);
-  --tint-result: rgb(66 32 6 / 0.6);
-  --tint-wrong:  rgb(69 10 10 / 0.6);
-}

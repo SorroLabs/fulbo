@@ -8,6 +8,7 @@ import { getTeamFlag } from "@/lib/team-flags"
 import { savePrediction } from "@/app/actions/predictions"
 import { Check, Loader2, Zap } from "lucide-react"
 import { toast } from "sonner"
+import { useTint } from "@/lib/use-tint"
 import type { Match, Prediction } from "@/types"
 
 function Flag({ name, logo }: { name: string; logo: string | null }) {
@@ -54,13 +55,15 @@ export function MatchListRow({ match, prediction, userId, eyeIcon, onPowerUp, la
 
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const
 
-  const tintVar = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
+  const tintType = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
     ? prediction.home_score === match.home_score && prediction.away_score === match.away_score
-      ? "var(--tint-exact)"
+      ? "exact" as const
       : Math.sign(match.home_score - match.away_score) === Math.sign(prediction.home_score - prediction.away_score)
-        ? "var(--tint-result)"
-        : "var(--tint-wrong)"
+        ? "result" as const
+        : "wrong" as const
     : undefined
+
+  const tintColor = useTint(tintType)
 
   return (
     <div
@@ -70,7 +73,7 @@ export function MatchListRow({ match, prediction, userId, eyeIcon, onPowerUp, la
         saved && match.status === "upcoming" && "border-primary/20",
         (match.status === "finished" || (match.status === "upcoming" && !saved)) && "border-border/50",
       )}
-      style={tintVar ? { backgroundColor: tintVar } : undefined}
+      style={tintColor ? { backgroundColor: tintColor } : undefined}
     >
       {/* Date + group */}
       <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
