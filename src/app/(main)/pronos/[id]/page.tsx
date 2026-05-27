@@ -9,6 +9,7 @@ import { PronoInvite } from "@/components/prono/prono-invite"
 import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
 import { PronoMatchesTab } from "@/components/prono/prono-matches-tab"
 import { PronoCoinsTab } from "@/components/prono/prono-coins-tab"
+import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -83,6 +84,18 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           </Link>
           {(isMember || isOwner) && (
             <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} />
+          )}
+          {isOwner && (
+            <PronoAdminSheet
+              pronoId={prono.id}
+              inviteCode={prono.invite_code}
+              initialName={prono.name}
+              initialDescription={prono.description ?? ""}
+              initialMaxMembers={prono.max_members}
+              initialPowerUpsEnabled={prono.power_ups_enabled ?? true}
+              members={(members ?? []).map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
+              ownerId={user!.id}
+            />
           )}
         </div>
       </div>

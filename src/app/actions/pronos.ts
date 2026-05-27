@@ -89,3 +89,75 @@ export async function joinPronoByCode({ code }: { code: string }) {
   if (!prono) return { error: "Código de invitación inválido" }
   return joinProno({ pronoId: prono.id })
 }
+
+export async function updatePronoSettings({
+  pronoId,
+  name,
+  description,
+  maxMembers,
+  powerUpsEnabled,
+}: {
+  pronoId: string
+  name: string
+  description: string
+  maxMembers: number
+  powerUpsEnabled: boolean
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autenticado" }
+
+  const { error } = await supabase
+    .from("pronos")
+    .update({ name: name.trim(), description: description.trim(), max_members: maxMembers, power_ups_enabled: powerUpsEnabled })
+    .eq("id", pronoId)
+    .eq("owner_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/pronos`)
+  return { success: true }
+}
+
+export async function removeMember({ pronoId, userId }: { pronoId: string; userId: string }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autenticado" }
+
+  const { data: prono } = await supabase
+    .from("pronos")
+    .select("owner_id")
+    .eq("id", pronoId)
+    .single()
+
+  if (!prono || prono.owner_id !== user.id) return { error: "Sin permisos" }
+  if (userId === user.id) return { error: "No podés removerte a vos mismo" }
+
+  const { error } = await supabase
+    .from("prono_members")
+    .delete()
+    .eq("prono_id", pronoId)
+    .eq("user_id", userId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/pronos`)
+  return { success: true }
+}
+
+export async function deleteProno({ pronoId }: { pronoId: string }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autenticado" }
+
+  const { error } = await supabase
+    .from("pronos")
+    .delete()
+    .eq("id", pronoId)
+    .eq("owner_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/pronos`)
+  return { success: true }
+}
