@@ -80,14 +80,6 @@ export function Navbar({ profile }: NavbarProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          {/* Coins link */}
-          {profile && (
-            <Link href="/coins" className="hidden md:flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary rounded-full px-3 py-1 text-sm font-semibold hover:bg-primary/20 transition-colors">
-              <Coins className="h-3.5 w-3.5" />
-              Monedas
-            </Link>
-          )}
-
           <ThemeToggle />
 
           {/* User menu */}
