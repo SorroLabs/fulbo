@@ -69,10 +69,10 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
 
   const tintClass = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
     ? prediction.home_score === match.home_score && prediction.away_score === match.away_score
-      ? "bg-green-100 dark:bg-green-950/60"
+      ? "tint-exact"
       : Math.sign(match.home_score - match.away_score) === Math.sign(prediction.home_score - prediction.away_score)
-        ? "bg-yellow-100 dark:bg-yellow-950/60"
-        : "bg-red-100 dark:bg-red-950/50"
+        ? "tint-result"
+        : "tint-wrong"
     : undefined
 
   return (
