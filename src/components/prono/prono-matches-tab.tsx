@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,10 +8,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MatchCard } from "@/components/competition/match-card"
 import { MatchListRow } from "@/components/competition/match-list-row"
+import { MatchFilterBar } from "@/components/competition/match-filter-bar"
 import { PowerUpModal } from "@/components/prono/power-up-modal"
 import { Eye, EyeOff, LayoutGrid, List } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
+import {
+  computeMatchdays, applyFilters, getAvailableFechas, getAvailableGroups,
+  EMPTY_FILTERS, type MatchFilters,
+} from "@/lib/match-utils"
 import type { Match, Prediction, PowerUpUse } from "@/types"
 
 interface Member {
@@ -59,36 +64,66 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
   const [selected, setSelected] = useState<Match | null>(null)
   const [powerUpMatch, setPowerUpMatch] = useState<Match | null>(null)
   const [view, setView] = useState<"grid" | "list">("grid")
+  const [filters, setFilters] = useState<MatchFilters>(EMPTY_FILTERS)
 
-  // matchId -> set of power-up types active for current user
-  const myPowerUpsByMatch = new Map<string, Set<string>>()
-  for (const pu of myPowerUps) {
-    if (!myPowerUpsByMatch.has(pu.match_id)) myPowerUpsByMatch.set(pu.match_id, new Set())
-    myPowerUpsByMatch.get(pu.match_id)!.add(pu.type)
-  }
+  // Power-up maps
+  const myPowerUpsByMatch = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    for (const pu of myPowerUps) {
+      if (!map.has(pu.match_id)) map.set(pu.match_id, new Set())
+      map.get(pu.match_id)!.add(pu.type)
+    }
+    return map
+  }, [myPowerUps])
 
   const hasSpy = (matchId: string) => myPowerUpsByMatch.get(matchId)?.has("spy") ?? false
 
-  // Map: matchId -> userId -> prediction
-  const predMap = new Map<string, Map<string, Prediction>>()
-  for (const p of predictions) {
-    if (!predMap.has(p.match_id)) predMap.set(p.match_id, new Map())
-    predMap.get(p.match_id)!.set(p.user_id, p)
-  }
-
-  // Map: matchId -> user's own prediction
-  const myPredMap = new Map<string, Prediction>()
-  if (userId) {
+  // Prediction maps
+  const predMap = useMemo(() => {
+    const map = new Map<string, Map<string, Prediction>>()
     for (const p of predictions) {
-      if (p.user_id === userId) myPredMap.set(p.match_id, p)
+      if (!map.has(p.match_id)) map.set(p.match_id, new Map())
+      map.get(p.match_id)!.set(p.user_id, p)
     }
-  }
+    return map
+  }, [predictions])
 
-  const byPhase = matches.reduce((acc, m) => {
+  const myPredMap = useMemo(() => {
+    const map = new Map<string, Prediction>()
+    if (userId) {
+      for (const p of predictions) {
+        if (p.user_id === userId) map.set(p.match_id, p)
+      }
+    }
+    return map
+  }, [predictions, userId])
+
+  // Filter utilities
+  const matchdays = useMemo(() => computeMatchdays(matches), [matches])
+  const predictedIds = useMemo(() => new Set(myPredMap.keys()), [myPredMap])
+  const availableFechas = useMemo(() => getAvailableFechas(matches, matchdays), [matches, matchdays])
+  const availableGroups = useMemo(() => getAvailableGroups(matches), [matches])
+
+  const filtered = useMemo(
+    () => applyFilters(matches, filters, matchdays, predictedIds),
+    [matches, filters, matchdays, predictedIds]
+  )
+
+  const byPhase = useMemo(() => filtered.reduce((acc, m) => {
     if (!acc[m.phase]) acc[m.phase] = []
     acc[m.phase].push(m)
     return acc
-  }, {} as Record<string, Match[]>)
+  }, {} as Record<string, Match[]>), [filtered])
+
+  const groupsByFecha = useMemo(() => {
+    const map = new Map<number, Match[]>()
+    for (const m of byPhase.groups ?? []) {
+      const f = matchdays.get(m.id) ?? 0
+      if (!map.has(f)) map.set(f, [])
+      map.get(f)!.push(m)
+    }
+    return map
+  }, [byPhase.groups, matchdays])
 
   const selectedPreds = selected ? predMap.get(selected.id) : null
 
@@ -98,7 +133,11 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     const canUsePowerUps = !!pronoId && !!userId && powerUpsEnabled && match.status === "upcoming"
 
     if (!locked) {
-      const eyeOff = <span title="Predicciones visibles 20 minutos antes de iniciar"><EyeOff className="h-4 w-4 text-muted-foreground/30" /></span>
+      const eyeOff = (
+        <span title="Predicciones visibles 20 minutos antes de iniciar">
+          <EyeOff className="h-4 w-4 text-muted-foreground/30" />
+        </span>
+      )
       if (view === "grid") {
         return (
           <MatchCard
@@ -161,7 +200,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       )
     }
 
-    // Grid locked card — same structure as MatchCard for visual consistency
+    // Grid locked card
     const dateStr = new Date(match.match_date).toLocaleString("es", {
       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
     })
@@ -177,7 +216,6 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
         <Card className="border-primary/20 hover:border-primary/40 transition-colors" style={tint ? { backgroundColor: tint } : undefined}>
           <CardContent>
-            {/* Header — date truncates if narrow, right side never wraps */}
             <div className="flex items-center justify-between mb-3 gap-2">
               <span className="text-xs text-muted-foreground min-w-0 truncate">{dateStr}</span>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -188,8 +226,6 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                 <Eye className="h-4 w-4 text-primary" />
               </div>
             </div>
-
-            {/* Flags + score */}
             <div className="flex items-center gap-3 mb-2">
               <div className="flex-1 flex justify-center">
                 <img src={getTeamFlag(match.home_team) ?? undefined} alt={match.home_team}
@@ -213,14 +249,11 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                   className="rounded shadow-sm object-cover" style={{ width: 40, height: 28, flexShrink: 0 }} />
               </div>
             </div>
-            {/* Names — flex items-center centers text vertically within minHeight */}
             <div className="flex gap-3">
               <div className="flex-1 flex items-center justify-center text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.home_team}</div>
               <div className="w-32 shrink-0" />
               <div className="flex-1 flex items-center justify-center text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</div>
             </div>
-
-            {/* Footer */}
             <div className="mt-3 flex items-center justify-center" style={{ minHeight: 36 }}>
               <span className="text-xs text-primary/70">
                 {matchPreds?.size ?? 0} de {members.length} predicciones · tap para ver
@@ -232,12 +265,38 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     )
   }
 
+  function renderSection(ms: Match[]) {
+    if (view === "grid") {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {ms.map(m => renderMatch(m))}
+        </div>
+      )
+    }
+    return (
+      <div className="flex flex-col gap-2">
+        {ms.map(m => renderMatch(m))}
+      </div>
+    )
+  }
+
+  const hasResults = PHASE_ORDER.some(p => byPhase[p]?.length)
+
   return (
     <>
-      <div className="space-y-8">
-        {/* View toggle */}
-        <div className="flex justify-end">
-          <div className="flex items-center rounded-lg border border-border overflow-hidden">
+      <div className="space-y-6">
+        {/* Controls */}
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <MatchFilterBar
+              filters={filters}
+              onChange={setFilters}
+              availableFechas={availableFechas}
+              availableGroups={availableGroups}
+              showUnpredicted={!!userId}
+            />
+          </div>
+          <div className="flex items-center rounded-lg border border-border overflow-hidden shrink-0">
             <button
               onClick={() => setView("grid")}
               className={cn("p-2 transition-colors", view === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}
@@ -253,22 +312,38 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
           </div>
         </div>
 
+        {/* Matches by phase */}
         {PHASE_ORDER.filter(p => byPhase[p]?.length).map(phase => (
-          <div key={phase}>
-            <h3 className="font-bold text-lg mb-4">
-              <Badge variant="outline" className="text-primary border-primary/30">{PHASE_LABELS[phase]}</Badge>
-            </h3>
-            {view === "grid" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {byPhase[phase].map(match => renderMatch(match))}
-              </div>
+          <div key={phase} className="space-y-4">
+            {phase === "groups" ? (
+              filters.fecha !== null ? (
+                renderSection(byPhase.groups)
+              ) : (
+                [...groupsByFecha.entries()].sort(([a], [b]) => a - b).map(([fecha, ms]) => (
+                  <div key={fecha}>
+                    <h3 className="font-bold text-lg mb-3">
+                      <Badge variant="outline" className="text-primary border-primary/30">Fecha {fecha}</Badge>
+                    </h3>
+                    {renderSection(ms)}
+                  </div>
+                ))
+              )
             ) : (
-              <div className="flex flex-col gap-2">
-                {byPhase[phase].map(match => renderMatch(match))}
+              <div>
+                <h3 className="font-bold text-lg mb-3">
+                  <Badge variant="outline" className="text-primary border-primary/30">{PHASE_LABELS[phase]}</Badge>
+                </h3>
+                {renderSection(byPhase[phase])}
               </div>
             )}
           </div>
         ))}
+
+        {!hasResults && (
+          <p className="text-center text-muted-foreground py-10">
+            {matches.length ? "No hay partidos con esos filtros." : "Los partidos se cargarán próximamente."}
+          </p>
+        )}
       </div>
 
       {pronoId && userId && powerUpMatch && (
@@ -297,9 +372,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                       <span className="font-bold text-sm">{selected.home_team}</span>
                     </div>
                     <span className="font-black text-lg px-1">
-                      {selected.status === "finished"
-                        ? `${selected.home_score} - ${selected.away_score}`
-                        : "vs"}
+                      {selected.status === "finished" ? `${selected.home_score} - ${selected.away_score}` : "vs"}
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm">{selected.away_team}</span>
@@ -308,7 +381,6 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                   </div>
                 </DialogTitle>
               </DialogHeader>
-
               <div className="divide-y divide-border/50">
                 {members.map(member => {
                   const pred = selectedPreds?.get(member.user_id)
@@ -329,9 +401,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                       </span>
                       {pred ? (
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-black text-base">
-                            {pred.home_score} - {pred.away_score}
-                          </span>
+                          <span className="font-black text-base">{pred.home_score} - {pred.away_score}</span>
                           {pred.points_earned !== null && (
                             <span className={cn(
                               "text-xs font-bold px-1.5 py-0.5 rounded-full",
