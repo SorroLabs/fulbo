@@ -3,9 +3,10 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, Trophy, Globe, Lock, Crown, Calendar } from "lucide-react"
+import { Users, Trophy, Globe, Lock, Crown, Calendar, BarChart3 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
+import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
 import { PronoMatchesTab } from "@/components/prono/prono-matches-tab"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
@@ -69,9 +70,12 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           </div>
           <p className="text-muted-foreground">{(prono as any).competitions?.name} · {(prono as any).competitions?.season}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          {isOwner && (
+            <PronoVisibilityToggle pronoId={prono.id} isPublic={prono.is_public} />
+          )}
           <Link href={`/competitions/${prono.competition_id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2")}>
-            <Trophy className="h-4 w-4" /> Rankings
+            <BarChart3 className="h-4 w-4" /> Estadísticas
           </Link>
           {(isMember || isOwner) && (
             <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} />

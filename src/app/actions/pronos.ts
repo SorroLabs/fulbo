@@ -61,6 +61,23 @@ export async function joinProno({ pronoId }: { pronoId: string }) {
   return { success: true }
 }
 
+export async function togglePronoVisibility({ pronoId, isPublic }: { pronoId: string; isPublic: boolean }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autenticado" }
+
+  const { error } = await supabase
+    .from("pronos")
+    .update({ is_public: isPublic })
+    .eq("id", pronoId)
+    .eq("owner_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/pronos`)
+  return { success: true }
+}
+
 export async function joinPronoByCode({ code }: { code: string }) {
   const supabase = await createClient()
   const { data: prono } = await supabase
