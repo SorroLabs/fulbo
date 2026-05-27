@@ -138,12 +138,18 @@
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-  .tint-exact   { background-color: #d4ffb3; }
-  .tint-result  { background-color: #fff3b1; }
-  .tint-wrong   { background-color: #ffbeb2; }
 }
 
-.dark .tint-exact   { background-color: rgb(5 46 22 / 0.5); }
-.dark .tint-result  { background-color: rgb(66 32 6 / 0.5); }
-.dark .tint-wrong   { background-color: rgb(69 10 10 / 0.5); }
+:root {
+  --tint-exact:  #d4ffb3;
+  --tint-result: #fff3b1;
+  --tint-wrong:  #ffbeb2;
+}
+.dark {
+  --tint-exact:  rgb(5 46 22 / 0.6);
+  --tint-result: rgb(66 32 6 / 0.6);
+  --tint-wrong:  rgb(69 10 10 / 0.6);
+}
+.tint-exact  { background-color: var(--tint-exact)  !important; }
+.tint-result { background-color: var(--tint-result) !important; }
+.tint-wrong  { background-color: var(--tint-wrong)  !important; }
