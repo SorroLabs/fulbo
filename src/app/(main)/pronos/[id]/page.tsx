@@ -193,7 +193,8 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
                   }
                 }
 
-                const efectividad = jugados > 0 ? Math.round(((exactos + resultados) / jugados) * 100) : null
+                const maxPts = jugados * (prono.points_exact ?? 3)
+                const efectividad = maxPts > 0 ? Math.round((member.total_points / maxPts) * 100) : null
 
                 return (
                   <div key={member.id} className={`flex items-center gap-3 py-3 ${isMe ? "text-primary" : ""}`}>

@@ -53,6 +53,8 @@ export interface Prono {
   power_ups_enabled: boolean
   invite_code: string
   max_members: number
+  points_exact: number
+  points_result: number
   status: "active" | "finished"
   created_at: string
   competition?: Competition

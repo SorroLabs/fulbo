@@ -9,12 +9,16 @@ export async function createProno({
   description,
   isPublic,
   powerUpsEnabled,
+  pointsExact,
+  pointsResult,
 }: {
   competitionId: string
   name: string
   description: string
   isPublic: boolean
   powerUpsEnabled: boolean
+  pointsExact: number
+  pointsResult: number
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,7 +26,7 @@ export async function createProno({
 
   const { data, error } = await supabase
     .from("pronos")
-    .insert({ owner_id: user.id, competition_id: competitionId, name, description, is_public: isPublic, power_ups_enabled: powerUpsEnabled })
+    .insert({ owner_id: user.id, competition_id: competitionId, name, description, is_public: isPublic, power_ups_enabled: powerUpsEnabled, points_exact: pointsExact, points_result: pointsResult })
     .select()
     .single()
 
