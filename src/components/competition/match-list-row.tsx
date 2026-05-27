@@ -54,12 +54,12 @@ export function MatchListRow({ match, prediction, userId, eyeIcon, onPowerUp, la
 
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const
 
-  const tintClass = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
+  const tintVar = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
     ? prediction.home_score === match.home_score && prediction.away_score === match.away_score
-      ? "tint-exact"
+      ? "var(--tint-exact)"
       : Math.sign(match.home_score - match.away_score) === Math.sign(prediction.home_score - prediction.away_score)
-        ? "tint-result"
-        : "tint-wrong"
+        ? "var(--tint-result)"
+        : "var(--tint-wrong)"
     : undefined
 
   return (
@@ -69,8 +69,8 @@ export function MatchListRow({ match, prediction, userId, eyeIcon, onPowerUp, la
         match.status === "live" && "border-primary/50 bg-primary/5",
         saved && match.status === "upcoming" && "border-primary/20",
         (match.status === "finished" || (match.status === "upcoming" && !saved)) && "border-border/50",
-        tintClass,
       )}
+      style={tintVar ? { backgroundColor: tintVar } : undefined}
     >
       {/* Date + group */}
       <div className="hidden sm:flex flex-col items-center w-16 shrink-0">

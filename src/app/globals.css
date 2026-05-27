@@ -150,6 +150,3 @@
   --tint-result: rgb(66 32 6 / 0.6);
   --tint-wrong:  rgb(69 10 10 / 0.6);
 }
-.tint-exact  { background-color: var(--tint-exact)  !important; }
-.tint-result { background-color: var(--tint-result) !important; }
-.tint-wrong  { background-color: var(--tint-wrong)  !important; }

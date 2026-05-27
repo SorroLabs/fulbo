@@ -67,12 +67,12 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
   })
 
-  const tintClass = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
+  const tintVar = match.status === "finished" && prediction && match.home_score != null && match.away_score != null
     ? prediction.home_score === match.home_score && prediction.away_score === match.away_score
-      ? "tint-exact"
+      ? "var(--tint-exact)"
       : Math.sign(match.home_score - match.away_score) === Math.sign(prediction.home_score - prediction.away_score)
-        ? "tint-result"
-        : "tint-wrong"
+        ? "var(--tint-result)"
+        : "var(--tint-wrong)"
     : undefined
 
   return (
@@ -81,8 +81,8 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
         "transition-all",
         match.status === "live" && "border-primary/50 shadow-md shadow-primary/10",
         saved && match.status === "upcoming" && "border-primary/20",
-        tintClass
       )}
+      style={tintVar ? { backgroundColor: tintVar } : undefined}
     >
       <CardContent>
         {/* Header */}
