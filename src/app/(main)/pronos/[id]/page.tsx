@@ -156,28 +156,79 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
 
         <TabsContent value="ranking" className="mt-6">
           <Card>
-            <CardContent className="pt-4 divide-y divide-border/50">
+            {/* Column headers */}
+            <div className="flex items-center gap-3 px-4 pt-3 pb-1 border-b border-border/50">
+              <div className="w-6 shrink-0" />
+              <div className="w-9 shrink-0" />
+              <div className="flex-1" />
+              <div className="hidden sm:grid grid-cols-3 gap-4 text-center">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-12">Pts</span>
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-12">Exactos</span>
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-12">Efect.</span>
+              </div>
+              <div className="sm:hidden text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-10 text-right">Pts</div>
+            </div>
+            <CardContent className="pt-0 divide-y divide-border/50">
               {members?.map((member: any, i: number) => {
                 const isMe = member.user_id === user?.id
                 const initials = member.profiles?.full_name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"
+
+                const finishedMatches = (matches ?? []).filter((m: any) => m.status === "finished")
+                const memberPreds = (allPredictions ?? []).filter((p: any) => p.user_id === member.user_id)
+                const predByMatch = new Map(memberPreds.map((p: any) => [p.match_id, p]))
+
+                let exactos = 0
+                let resultados = 0
+                let jugados = 0
+
+                for (const m of finishedMatches) {
+                  const pred = predByMatch.get(m.id)
+                  if (!pred) continue
+                  jugados++
+                  if (pred.home_score === m.home_score && pred.away_score === m.away_score) {
+                    exactos++
+                  } else {
+                    const predResult = pred.home_score > pred.away_score ? 1 : pred.home_score < pred.away_score ? -1 : 0
+                    const realResult = m.home_score > m.away_score ? 1 : m.home_score < m.away_score ? -1 : 0
+                    if (predResult === realResult) resultados++
+                  }
+                }
+
+                const efectividad = jugados > 0 ? Math.round(((exactos + resultados) / jugados) * 100) : null
+
                 return (
-                  <div key={member.id} className={`flex items-center gap-4 py-3 ${isMe ? "text-primary" : ""}`}>
-                    <span className={`w-8 text-center font-black text-lg ${i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}>
+                  <div key={member.id} className={`flex items-center gap-3 py-3 ${isMe ? "text-primary" : ""}`}>
+                    <span className={`w-6 text-center font-black text-base shrink-0 ${i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}>
                       {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                     </span>
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-9 w-9 shrink-0">
                       <AvatarImage src={member.profiles?.avatar_url} />
                       <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold truncate ${isMe ? "text-primary" : ""}`}>
-                        {member.profiles?.full_name ?? "Usuario"} {isMe && "(vos)"}
+                      <p className={`font-semibold truncate text-sm ${isMe ? "text-primary" : ""}`}>
+                        {member.profiles?.full_name ?? "Usuario"} {isMe && <span className="font-normal opacity-60">(vos)</span>}
+                        {member.user_id === prono.owner_id && (
+                          <Crown className="h-3 w-3 text-primary inline ml-1 mb-0.5" />
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground sm:hidden">
+                        {exactos > 0 && <span className="text-primary font-semibold">{exactos} exactos</span>}
+                        {exactos > 0 && efectividad !== null && " · "}
+                        {efectividad !== null && <span>{efectividad}% efect.</span>}
+                        {exactos === 0 && efectividad === null && "Sin predicciones aún"}
                       </p>
                     </div>
-                    {member.user_id === prono.owner_id && (
-                      <Crown className="h-3.5 w-3.5 text-primary shrink-0" />
-                    )}
-                    <span className="font-black text-lg shrink-0">{member.total_points}</span>
+                    {/* Desktop stats */}
+                    <div className="hidden sm:grid grid-cols-3 gap-4 text-center">
+                      <span className="font-black text-base w-12">{member.total_points}</span>
+                      <span className="font-bold text-sm w-12 text-primary">{exactos}</span>
+                      <span className="font-bold text-sm w-12 text-muted-foreground">
+                        {efectividad !== null ? `${efectividad}%` : "—"}
+                      </span>
+                    </div>
+                    {/* Mobile: only points */}
+                    <span className="sm:hidden font-black text-base shrink-0 w-10 text-right">{member.total_points}</span>
                   </div>
                 )
               })}
