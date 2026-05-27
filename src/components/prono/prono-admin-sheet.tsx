@@ -88,19 +88,19 @@ export function PronoAdminSheet({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className={cn(
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium ring-offset-background transition-colors",
+        "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full text-sm font-medium transition-colors",
         "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        "h-9 px-3",
+        "h-8 px-2.5",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       )}>
         <Settings className="h-4 w-4" /> Administrar
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader className="mb-6">
+        <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle>Administrar prono</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-8">
+        <div className="space-y-8 px-6 pb-8 pt-6">
           {/* Settings */}
           <section className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Configuración</h3>
