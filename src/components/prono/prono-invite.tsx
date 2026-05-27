@@ -16,7 +16,7 @@ interface Props {
 
 export function PronoInvite({ inviteCode, appUrl }: Props) {
   const [copied, setCopied] = useState(false)
-  const inviteUrl = `${appUrl}/pronos/${inviteCode}`
+  const inviteUrl = `${appUrl.replace(/\/$/, "")}/pronos/${inviteCode}`
 
   function copyLink() {
     navigator.clipboard.writeText(inviteUrl)

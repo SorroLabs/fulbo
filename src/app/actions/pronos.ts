@@ -87,7 +87,7 @@ export async function joinPronoByCode({ code }: { code: string }) {
   const { data: prono } = await supabase
     .from("pronos")
     .select("id")
-    .eq("invite_code", code.toUpperCase())
+    .eq("invite_code", code.trim().toUpperCase())
     .single()
 
   if (!prono) return { error: "Código de invitación inválido" }
