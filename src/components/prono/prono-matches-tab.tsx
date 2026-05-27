@@ -152,7 +152,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
               <TeamFlag name={match.away_team} />
               <span className="text-sm font-semibold truncate">{match.away_team}</span>
             </div>
-            <div className="shrink-0 flex items-center gap-1.5">
+            <div className="shrink-0 w-16 sm:w-28 flex items-center justify-end gap-1.5">
               <span className="text-xs text-muted-foreground">{matchPreds?.size ?? 0}/{members.length}</span>
               <Eye className="h-4 w-4 text-primary" />
             </div>

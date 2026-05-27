@@ -121,8 +121,8 @@ export function MatchListRow({ match, prediction, userId, eyeIcon, onPowerUp, la
         <span className="text-sm font-semibold truncate">{match.away_team}</span>
       </div>
 
-      {/* Right side: prediction result, save icon, power-up, badge, eye */}
-      <div className="shrink-0 flex items-center gap-1.5">
+      {/* Right side: fixed width so score column stays centered across all rows */}
+      <div className="shrink-0 w-16 sm:w-28 flex items-center justify-end gap-1.5">
         {match.status === "finished" && prediction ? (
           <>
             <span className="text-xs text-muted-foreground hidden sm:inline">
