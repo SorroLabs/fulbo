@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Globe, Lock, Zap, ZapOff } from "lucide-react"
+import { Globe, Lock, Zap, ZapOff, Info, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createProno } from "@/app/actions/pronos"
 import { toast } from "sonner"
@@ -24,6 +24,7 @@ export function CreatePronoForm({ competitions }: Props) {
   const [isPublic, setIsPublic] = useState(true)
   const [powerUpsEnabled, setPowerUpsEnabled] = useState(true)
   const [isPending, startTransition] = useTransition()
+  const [showPowerUpInfo, setShowPowerUpInfo] = useState(false)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -82,7 +83,28 @@ export function CreatePronoForm({ competitions }: Props) {
           <Separator />
 
           <div className="space-y-2">
-            <Label>Power-ups</Label>
+            <div className="flex items-center gap-2">
+              <Label>Power-ups</Label>
+              <button
+                type="button"
+                onClick={() => setShowPowerUpInfo(v => !v)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPowerUpInfo ? <X className="h-3.5 w-3.5" /> : <Info className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+            {showPowerUpInfo && (
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-xl p-3 space-y-1 leading-relaxed">
+                <p>Los power-ups permiten a los miembros usar sus monedas para activar ventajas en partidos concretos:</p>
+                <ul className="space-y-0.5 pl-3">
+                  <li>⚡ <strong>Doble puntos</strong> — duplica los puntos de un partido</li>
+                  <li>🕐 <strong>Cambio tardío</strong> — editá hasta 2 min antes del partido</li>
+                  <li>👁 <strong>Espía</strong> — mirá la predicción de otro miembro</li>
+                  <li>🛡 <strong>Comodín</strong> — protege tu posición si errás</li>
+                </ul>
+                <p className="pt-0.5">Esta opción no se puede cambiar una vez creado el prono.</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               {[
                 { value: true, label: "Con power-ups", desc: "Los miembros pueden usar monedas para ventajas", Icon: Zap },

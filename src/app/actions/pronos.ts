@@ -95,13 +95,11 @@ export async function updatePronoSettings({
   name,
   description,
   maxMembers,
-  powerUpsEnabled,
 }: {
   pronoId: string
   name: string
   description: string
   maxMembers: number
-  powerUpsEnabled: boolean
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -109,7 +107,7 @@ export async function updatePronoSettings({
 
   const { error } = await supabase
     .from("pronos")
-    .update({ name: name.trim(), description: description.trim(), max_members: maxMembers, power_ups_enabled: powerUpsEnabled })
+    .update({ name: name.trim(), description: description.trim(), max_members: maxMembers })
     .eq("id", pronoId)
     .eq("owner_id", user.id)
 

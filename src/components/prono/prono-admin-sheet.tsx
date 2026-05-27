@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Settings, UserX, Trash2, Zap, Users, ChevronDown, ChevronUp } from "lucide-react"
+import { Settings, UserX, Trash2, Users, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { updatePronoSettings, removeMember, deleteProno } from "@/app/actions/pronos"
@@ -29,7 +29,6 @@ interface Props {
   initialName: string
   initialDescription: string
   initialMaxMembers: number
-  initialPowerUpsEnabled: boolean
   members: Member[]
   ownerId: string
 }
@@ -40,7 +39,6 @@ export function PronoAdminSheet({
   initialName,
   initialDescription,
   initialMaxMembers,
-  initialPowerUpsEnabled,
   members,
   ownerId,
 }: Props) {
@@ -51,7 +49,6 @@ export function PronoAdminSheet({
   const [name, setName] = useState(initialName)
   const [description, setDescription] = useState(initialDescription)
   const [maxMembers, setMaxMembers] = useState(initialMaxMembers)
-  const [powerUpsEnabled, setPowerUpsEnabled] = useState(initialPowerUpsEnabled)
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
@@ -60,7 +57,7 @@ export function PronoAdminSheet({
     if (!name.trim()) { toast.error("El nombre no puede estar vacío"); return }
     if (maxMembers < members.length) { toast.error(`Hay ${members.length} miembros, el máximo no puede ser menor`); return }
     startTransition(async () => {
-      const res = await updatePronoSettings({ pronoId, name, description, maxMembers, powerUpsEnabled })
+      const res = await updatePronoSettings({ pronoId, name, description, maxMembers })
       if (res.error) { toast.error(res.error); return }
       toast.success("Configuración guardada")
       router.refresh()
@@ -142,27 +139,6 @@ export function PronoAdminSheet({
                     <ChevronUp className="h-4 w-4" />
                   </button>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">Power-ups</p>
-                    <p className="text-xs text-muted-foreground">{powerUpsEnabled ? "Habilitados" : "Deshabilitados"}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setPowerUpsEnabled(v => !v)}
-                  className={cn(
-                    "relative w-11 h-6 rounded-full transition-colors",
-                    powerUpsEnabled ? "bg-primary" : "bg-muted"
-                  )}
-                >
-                  <span className={cn(
-                    "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform",
-                    powerUpsEnabled && "translate-x-5"
-                  )} />
-                </button>
               </div>
             </div>
             <Button onClick={handleSaveSettings} disabled={isPending} className="w-full rounded-full">

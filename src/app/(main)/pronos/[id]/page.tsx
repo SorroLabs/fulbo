@@ -92,7 +92,6 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
               initialName={prono.name}
               initialDescription={prono.description ?? ""}
               initialMaxMembers={prono.max_members}
-              initialPowerUpsEnabled={prono.power_ups_enabled ?? true}
               members={(members ?? []).map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
               ownerId={user!.id}
             />
