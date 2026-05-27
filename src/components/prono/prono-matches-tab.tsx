@@ -313,7 +313,11 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
         </div>
 
         {/* Matches by phase */}
-        {PHASE_ORDER.filter(p => byPhase[p]?.length).map(phase => (
+        {PHASE_ORDER.filter(p => {
+          if (!byPhase[p]?.length) return false
+          if (p !== "groups" && byPhase[p].every(m => m.status === "upcoming")) return false
+          return true
+        }).map(phase => (
           <div key={phase} className="space-y-4">
             {phase === "groups" ? (
               filters.fecha !== null ? (

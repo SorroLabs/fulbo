@@ -114,7 +114,12 @@ export function MatchesView({ matches, predMap, userId }: Props) {
       </div>
 
       {/* Matches */}
-      {PHASE_ORDER.filter(p => byPhase[p]?.length).map(phase => (
+      {PHASE_ORDER.filter(p => {
+        if (!byPhase[p]?.length) return false
+        // Non-group phases only appear once at least one match has started/finished
+        if (p !== "groups" && byPhase[p].every(m => m.status === "upcoming")) return false
+        return true
+      }).map(phase => (
         <div key={phase} className="space-y-4">
           {/* Groups phase: sub-group by fecha */}
           {phase === "groups" ? (
