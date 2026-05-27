@@ -69,16 +69,15 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
         <div>
           <div className="flex items-center gap-2 mb-2">
             <h1 className="text-3xl font-black">{prono.name}</h1>
-            {prono.is_public
-              ? <Badge variant="secondary" className="gap-1"><Globe className="h-3 w-3" /> Público</Badge>
-              : <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" /> Privado</Badge>}
+            {isOwner
+              ? <PronoVisibilityToggle pronoId={prono.id} isPublic={prono.is_public} />
+              : prono.is_public
+                ? <Badge variant="secondary" className="gap-1"><Globe className="h-3 w-3" /> Público</Badge>
+                : <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" /> Privado</Badge>}
           </div>
           <p className="text-muted-foreground">{(prono as any).competitions?.name} · {(prono as any).competitions?.season}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-          {isOwner && (
-            <PronoVisibilityToggle pronoId={prono.id} isPublic={prono.is_public} />
-          )}
           <Link href={`/competitions/${prono.competition_id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2")}>
             <BarChart3 className="h-4 w-4" /> Estadísticas
           </Link>

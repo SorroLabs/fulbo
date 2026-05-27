@@ -35,16 +35,17 @@ export function PronoVisibilityToggle({ pronoId, isPublic: initial }: Props) {
       disabled={isPending}
       title={isPublic ? "Hacer privado" : "Hacer público"}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
+        "hover:opacity-70 cursor-pointer",
         isPublic
-          ? "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
-          : "border-primary/30 text-primary bg-primary/5 hover:bg-primary/10",
-        isPending && "opacity-50 cursor-not-allowed"
+          ? "bg-secondary text-secondary-foreground border-transparent"
+          : "border-border text-foreground bg-transparent",
+        isPending && "opacity-40 cursor-not-allowed"
       )}
     >
       {isPublic
-        ? <><Globe className="h-3.5 w-3.5" /> Público</>
-        : <><Lock className="h-3.5 w-3.5" /> Privado</>}
+        ? <><Globe className="h-3 w-3" /> Público</>
+        : <><Lock className="h-3 w-3" /> Privado</>}
     </button>
   )
 }
