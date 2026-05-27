@@ -3,13 +3,14 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins } from "lucide-react"
+import { Users, Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
 import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
 import { PronoMatchesTab } from "@/components/prono/prono-matches-tab"
 import { PronoCoinsTab } from "@/components/prono/prono-coins-tab"
 import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
+import { PronoJoinButton } from "@/components/prono/prono-join-button"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -81,6 +82,9 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           <Link href={`/competitions/${prono.competition_id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2")}>
             <BarChart3 className="h-4 w-4" /> Estadísticas
           </Link>
+          {!isMember && !isOwner && (
+            <PronoJoinButton pronoId={prono.id} inviteCode={prono.invite_code} isLoggedIn={!!user} />
+          )}
           {(isMember || isOwner) && (
             <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} />
           )}
