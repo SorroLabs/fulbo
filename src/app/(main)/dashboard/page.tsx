@@ -115,10 +115,10 @@ export default async function DashboardPage() {
           <Card className="border-dashed">
             <CardContent className="py-10 text-center">
               <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <p className="font-medium mb-1">Todavía no estás en ningun prono</p>
-              <p className="text-sm text-muted-foreground mb-4">Creá una nueva o buscá un prono pública</p>
+              <p className="font-medium mb-1">Todavía no estás en ningún prono</p>
+              <p className="text-sm text-muted-foreground mb-4">Creá uno nuevo o buscá un prono público</p>
               <div className="flex justify-center gap-3">
-                <Link href="/pronos/nueva" className={cn(buttonVariants({ size: "sm" }), "rounded-full")}>
+                <Link href="/pronos/nuevo" className={cn(buttonVariants({ size: "sm" }), "rounded-full")}>
                   Crear prono
                 </Link>
                 <Link href="/pronos" className={cn(buttonVariants({ size: "sm", variant: "outline" }), "rounded-full")}>

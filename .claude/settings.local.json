@@ -20,7 +20,9 @@
       "Bash(git branch *)",
       "Bash(git remote *)",
       "Bash(git push *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(xargs ls -la)",
+      "Bash(git *)"
     ]
   }
 }

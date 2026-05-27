@@ -6,7 +6,7 @@ import { Trophy, Users, BarChart3, Coins, Zap, Globe } from "lucide-react"
 
 const FEATURES = [
   { icon: Trophy, title: "Predicciones en tiempo real", desc: "Cargá tus marcadores antes de cada partido y seguí los resultados en vivo." },
-  { icon: Users, title: "Pronos públicos y privadas", desc: "Creá grupos con amigos o unite a pronos públicos de cualquier parte del mundo." },
+  { icon: Users, title: "Pronos públicos y privados", desc: "Creá grupos con amigos o unite a pronos públicos de cualquier parte del mundo." },
   { icon: BarChart3, title: "Rankings globales", desc: "Competí en tu prono y también en el ranking global de la competición." },
   { icon: Coins, title: "Sistema de monedas", desc: "Ganá monedas por cada acierto y usálas en power-ups y duelos." },
   { icon: Zap, title: "Power-ups estratégicos", desc: "Doble puntos, cambio tardío, espía y comodín para darle más emoción." },

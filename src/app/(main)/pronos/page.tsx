@@ -38,7 +38,7 @@ export default async function PollasPage() {
         </div>
         <div className="flex gap-3">
           <JoinPronoDialog />
-          <Link href="/pronos/nueva" className={cn(buttonVariants(), "rounded-full gap-2")}>
+          <Link href="/pronos/nuevo" className={cn(buttonVariants(), "rounded-full gap-2")}>
             <Plus className="h-4 w-4" /> Nuevo prono
           </Link>
         </div>
@@ -58,8 +58,8 @@ export default async function PollasPage() {
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-base group-hover:text-primary transition-colors">{pm.pronos?.name}</CardTitle>
                       {pm.pronos?.is_public
-                        ? <Badge variant="secondary" className="shrink-0 gap-1"><Globe className="h-3 w-3" /> Pública</Badge>
-                        : <Badge variant="outline" className="shrink-0 gap-1"><Lock className="h-3 w-3" /> Privada</Badge>}
+                        ? <Badge variant="secondary" className="shrink-0 gap-1"><Globe className="h-3 w-3" /> Público</Badge>
+                        : <Badge variant="outline" className="shrink-0 gap-1"><Lock className="h-3 w-3" /> Privado</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground">{pm.pronos?.competitions?.name}</p>
                   </CardHeader>

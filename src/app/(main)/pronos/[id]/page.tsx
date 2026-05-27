@@ -70,8 +70,8 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           <div className="flex items-center gap-2 mb-2">
             <h1 className="text-3xl font-black">{prono.name}</h1>
             {prono.is_public
-              ? <Badge variant="secondary" className="gap-1"><Globe className="h-3 w-3" /> Pública</Badge>
-              : <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" /> Privada</Badge>}
+              ? <Badge variant="secondary" className="gap-1"><Globe className="h-3 w-3" /> Público</Badge>
+              : <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" /> Privado</Badge>}
           </div>
           <p className="text-muted-foreground">{(prono as any).competitions?.name} · {(prono as any).competitions?.season}</p>
         </div>

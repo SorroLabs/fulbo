@@ -37,7 +37,7 @@ export function PronoInvite({ inviteCode, appUrl }: Props) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Invitar a el prono</DialogTitle>
+          <DialogTitle>Invitar al prono</DialogTitle>
         </DialogHeader>
         <div className="space-y-6 pt-2">
           {/* QR */}

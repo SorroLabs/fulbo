@@ -22,7 +22,7 @@ export function JoinPronoDialog() {
       const res = await joinPronoByCode({ code })
       if (res.error) toast.error(res.error)
       else {
-        toast.success("¡Te uniste a el prono!")
+        toast.success("¡Te uniste al prono!")
         setOpen(false)
         router.refresh()
       }
@@ -54,7 +54,7 @@ export function JoinPronoDialog() {
             disabled={isPending || code.length < 4}
             className="w-full rounded-xl"
           >
-            {isPending ? "Uniéndome..." : "Unirme a el prono"}
+            {isPending ? "Uniéndome..." : "Unirme al prono"}
           </Button>
         </div>
       </DialogContent>

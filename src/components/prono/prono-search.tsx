@@ -76,7 +76,7 @@ export function PronoSearch({ pronos, myPollaIds: initialMyIds }: Props) {
                     <p className="text-xs text-muted-foreground mt-0.5">{prono.competitions?.name}</p>
                   </div>
                   <Badge variant="secondary" className="shrink-0 gap-1 text-xs">
-                    <Globe className="h-3 w-3" /> Pública
+                    <Globe className="h-3 w-3" /> Público
                   </Badge>
                 </div>
               </CardHeader>

@@ -33,7 +33,7 @@ export function CreatePronoForm({ competitions }: Props) {
       const res = await createProno({ competitionId, name, description, isPublic, powerUpsEnabled })
       if (res.error) toast.error(res.error)
       else {
-        toast.success("¡Prono creada!")
+        toast.success("¡Prono creado!")
         router.push(`/pronos/${res.data!.invite_code}`)
       }
     })
@@ -44,7 +44,7 @@ export function CreatePronoForm({ competitions }: Props) {
       <Card>
         <CardContent className="pt-6 space-y-5">
           <div className="space-y-2">
-            <Label>Nombre de el prono *</Label>
+            <Label>Nombre del prono *</Label>
             <Input
               value={name}
               onChange={e => setName(e.target.value)}
@@ -136,8 +136,8 @@ export function CreatePronoForm({ competitions }: Props) {
             <Label>Visibilidad</Label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { value: true, label: "Pública", desc: "Cualquiera puede encontrarla y unirse", Icon: Globe },
-                { value: false, label: "Privada", desc: "Solo por link o código QR", Icon: Lock },
+                { value: true, label: "Público", desc: "Cualquiera puede encontrarlo y unirse", Icon: Globe },
+                { value: false, label: "Privado", desc: "Solo por link o código QR", Icon: Lock },
               ].map(({ value, label, desc, Icon }) => (
                 <button
                   key={String(value)}
