@@ -10,7 +10,6 @@ import { savePrediction } from "@/app/actions/predictions"
 import { Check, Loader2, Zap } from "lucide-react"
 import { toast } from "sonner"
 import type { Match, Prediction } from "@/types"
-import { useTint } from "@/lib/use-tint"
 
 function TeamFlag({ name, logo }: { name: string; logo: string | null }) {
   const src = logo || getTeamFlag(name)
@@ -76,16 +75,14 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
         : "wrong" as const
     : undefined
 
-  const tintColor = useTint(tintType)
-
   return (
     <Card
       className={cn(
         "transition-all",
         match.status === "live" && "border-primary/50 shadow-md shadow-primary/10",
         saved && match.status === "upcoming" && "border-primary/20",
+        tintType && `match-tint-${tintType}`,
       )}
-      style={tintColor ? { backgroundColor: tintColor } : undefined}
     >
       <CardContent>
         {/* Header */}

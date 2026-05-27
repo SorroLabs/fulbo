@@ -8,7 +8,6 @@ import { getTeamFlag } from "@/lib/team-flags"
 import { savePrediction } from "@/app/actions/predictions"
 import { Check, Loader2, Zap } from "lucide-react"
 import { toast } from "sonner"
-import { useTint } from "@/lib/use-tint"
 import type { Match, Prediction } from "@/types"
 
 function Flag({ name, logo }: { name: string; logo: string | null }) {
@@ -63,8 +62,6 @@ export function MatchListRow({ match, prediction, userId, eyeIcon, onPowerUp, la
         : "wrong" as const
     : undefined
 
-  const tintColor = useTint(tintType)
-
   return (
     <div
       className={cn(
@@ -72,8 +69,8 @@ export function MatchListRow({ match, prediction, userId, eyeIcon, onPowerUp, la
         match.status === "live" && "border-primary/50 bg-primary/5",
         saved && match.status === "upcoming" && "border-primary/20",
         (match.status === "finished" || (match.status === "upcoming" && !saved)) && "border-border/50",
+        tintType && `match-tint-${tintType}`,
       )}
-      style={tintColor ? { backgroundColor: tintColor } : undefined}
     >
       {/* Date + group */}
       <div className="hidden sm:flex flex-col items-center w-16 shrink-0">

@@ -140,3 +140,10 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+.match-tint-exact  { background-color: #d4ffb3; }
+.match-tint-result { background-color: #fff3b1; }
+.match-tint-wrong  { background-color: #ffbeb2; }
+.dark .match-tint-exact  { background-color: rgb(5 46 22 / 0.55); }
+.dark .match-tint-result { background-color: rgb(66 32 6 / 0.55); }
+.dark .match-tint-wrong  { background-color: rgb(69 10 10 / 0.55); }
+
