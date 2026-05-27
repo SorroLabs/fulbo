@@ -1,170 +1,125 @@
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Coins, TrendingUp, TrendingDown, Zap, Trophy } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PowerUpStore } from "@/components/coins/power-up-store"
+import { Coins, Clock, Zap, Eye, Shield, Star, Trophy, CheckCircle } from "lucide-react"
 
-export default async function CoinsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
+const POWER_UPS = [
+  {
+    icon: Clock,
+    name: "Cambio tardío",
+    cost: 10,
+    color: "text-blue-500",
+    bg: "bg-blue-500/10",
+    description: "Editá tu predicción hasta 2 minutos antes del partido, incluso cuando ya está bloqueada.",
+    detail: "Perfecto para cuando querés esperar a las alineaciones confirmadas antes de pronosticar.",
+  },
+  {
+    icon: Zap,
+    name: "Doble puntos",
+    cost: 20,
+    color: "text-yellow-500",
+    bg: "bg-yellow-500/10",
+    description: "Duplicá los puntos que ganés en un partido específico.",
+    detail: "Si acertás el marcador exacto obtenés 6 puntos en vez de 3. Si acertás el resultado, 2 en vez de 1.",
+  },
+  {
+    icon: Eye,
+    name: "Espía",
+    cost: 15,
+    color: "text-purple-500",
+    bg: "bg-purple-500/10",
+    description: "Mirá la predicción de otro participante antes de que empiece el partido.",
+    detail: "Además te permite editar tu propia predicción hasta 2 minutos antes del partido, como el Cambio tardío.",
+  },
+  {
+    icon: Shield,
+    name: "Comodín",
+    cost: 30,
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10",
+    description: "Protegé tu predicción: si el partido termina diferente a lo pronosticado, no perdés posición.",
+    detail: "No suma puntos extra, pero evita que un resultado inesperado te aleje del podio.",
+  },
+]
 
-  const [{ data: memberRows }, { data: transactions }] = await Promise.all([
-    supabase
-      .from("prono_members")
-      .select("coins_in_prono, pronos(id, name, competition_id, competitions(name, season, logo_url, status))")
-      .eq("user_id", user.id)
-      .order("joined_at", { ascending: false }),
-    supabase
-      .from("coin_transactions")
-      .select("*, competitions(name), pronos(name)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(50),
-  ])
+const HOW_TO_EARN = [
+  { action: "Unirse a un prono", reward: "100 🪙", icon: Trophy },
+  { action: "Resultado correcto (1-X-2)", reward: "1 🪙", icon: CheckCircle },
+  { action: "Marcador exacto", reward: "3 🪙", icon: Star },
+]
 
-  const totalEarned = transactions?.filter(t => t.type === "earn" || t.type === "admin_grant").reduce((a, t) => a + t.amount, 0) ?? 0
-  const totalSpent = transactions?.filter(t => t.type === "spend").reduce((a, t) => a + t.amount, 0) ?? 0
-
-  const activeRow = memberRows?.find(r => (r.pronos as any)?.competitions?.status === "active") ?? memberRows?.[0]
-
+export default function CoinsPage() {
   return (
-    <div className="space-y-8 max-w-2xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-black mb-1">Mis monedas</h1>
-        <p className="text-muted-foreground">Ganá monedas prediciendo y usálas en power-ups</p>
-      </div>
-
-      {/* Per-prono wallets */}
-      {(memberRows?.length ?? 0) > 0 ? (
-        <div className="space-y-3">
-          {memberRows!.map((row, i) => {
-            const prono = row.pronos as any
-            const comp = prono?.competitions
-            const isActive = comp?.status === "active"
-            return (
-              <Card key={i} className={isActive ? "border-primary/30 bg-primary/5" : ""}>
-                <CardContent className="pt-4 pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {comp?.logo_url
-                        ? <img src={comp.logo_url} alt="" className="w-8 h-8 object-contain" />
-                        : <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"><Trophy className="h-4 w-4 text-primary" /></div>
-                      }
-                      <div>
-                        <p className="font-semibold text-sm">{prono?.name}</p>
-                        <p className="text-xs text-muted-foreground">{comp?.name} · {comp?.season}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Coins className="h-4 w-4 text-primary" />
-                      <span className="text-2xl font-black text-primary">{row.coins_in_prono}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+    <div className="space-y-10 max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Coins className="h-8 w-8 text-primary" />
+          </div>
         </div>
-      ) : (
-        <Card>
-          <CardContent className="pt-6 pb-6 text-center text-muted-foreground">
-            <Coins className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Todavía no tenés monedas</p>
-            <p className="text-sm mt-1">Unite a un prono para recibir 100 🪙 de bienvenida</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 text-emerald-500">
-              <TrendingUp className="h-4 w-4" />
-              <span className="font-black text-xl">+{totalEarned}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Ganadas en total</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 text-red-500">
-              <TrendingDown className="h-4 w-4" />
-              <span className="font-black text-xl">-{totalSpent}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Gastadas en total</p>
-          </CardContent>
-        </Card>
+        <h1 className="text-3xl font-black">Monedas & Power-ups</h1>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Ganá monedas prediciendo partidos y usálas para activar ventajas estratégicas dentro de tu prono.
+        </p>
       </div>
 
       {/* How to earn */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">¿Cómo ganar más monedas?</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-bold">¿Cómo ganás monedas?</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            { action: "Unirse a un prono", reward: "+100 🪙" },
-            { action: "Marcador exacto", reward: "+3 🪙" },
-            { action: "Resultado correcto", reward: "+1 🪙" },
-          ].map(({ action, reward }) => (
-            <div key={action} className="flex items-center justify-between py-1">
-              <span className="text-sm text-muted-foreground">{action}</span>
-              <Badge variant="outline" className="text-primary border-primary/30 font-bold">{reward}</Badge>
+        <CardContent className="divide-y divide-border/50">
+          {HOW_TO_EARN.map(({ action, reward, icon: Icon }) => (
+            <div key={action} className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Icon className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm font-medium">{action}</span>
+              </div>
+              <Badge variant="outline" className="text-primary border-primary/30 font-bold text-sm">{reward}</Badge>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="powerups">
-        <TabsList className="rounded-full">
-          <TabsTrigger value="powerups" className="rounded-full gap-2">
-            <Zap className="h-4 w-4" /> Power-ups
-          </TabsTrigger>
-          <TabsTrigger value="history" className="rounded-full gap-2">
-            <Coins className="h-4 w-4" /> Historial
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="powerups" className="mt-6">
-          <PowerUpStore
-            userId={user.id}
-            userCoins={(activeRow as any)?.coins_in_prono ?? 0}
-          />
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-6">
-          <Card>
-            <CardContent className="pt-4 divide-y divide-border/50">
-              {transactions?.map(t => {
-                const prono = (t as any).pronos
-                const comp = (t as any).competitions
-                return (
-                  <div key={t.id} className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="text-sm font-medium">{t.reason}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {prono?.name && <span className="text-primary/70">{prono.name} · </span>}
-                        {comp?.name && !prono?.name && <span className="text-primary/70">{comp.name} · </span>}
-                        {new Date(t.created_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
-                      </p>
-                    </div>
-                    <span className={`font-black text-base ${t.type === "spend" ? "text-red-500" : "text-primary"}`}>
-                      {t.type === "spend" ? "-" : "+"}{t.amount} 🪙
-                    </span>
+      {/* Power-ups */}
+      <div>
+        <h2 className="text-lg font-bold mb-4">Power-ups disponibles</h2>
+        <div className="space-y-3">
+          {POWER_UPS.map(({ icon: Icon, name, cost, color, bg, description, detail }) => (
+            <Card key={name} className="overflow-hidden">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex gap-4">
+                  <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center shrink-0 mt-0.5`}>
+                    <Icon className={`h-5 w-5 ${color}`} />
                   </div>
-                )
-              })}
-              {!transactions?.length && (
-                <p className="text-center text-muted-foreground py-8">No hay transacciones aún.</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-bold text-sm">{name}</p>
+                      <Badge variant="outline" className="text-primary border-primary/30 font-bold text-xs shrink-0">
+                        {cost} 🪙
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-foreground">{description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{detail}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="pt-5 pb-5 text-center">
+          <p className="text-sm font-semibold mb-1">¿Querés ver tu saldo actual?</p>
+          <p className="text-xs text-muted-foreground">
+            Entrá a cualquier prono y tocá la pestaña <strong>Monedas</strong> para ver tu balance, historial y power-ups activos en ese prono.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }
