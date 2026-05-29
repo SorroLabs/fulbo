@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { ShieldCheck, Users, Trophy, Calendar } from "lucide-react"
+import { ShieldCheck } from "lucide-react"
 import { AdminPanel } from "@/components/admin/admin-panel"
 import type { Match } from "@/types"
 
@@ -67,9 +66,6 @@ export default async function AdminPage() {
       (specialPredictionCounts[row.competition_id][row.type] ?? 0) + 1
   }
 
-  const totalPronos = (pronos ?? []).length
-  const activeComps = (competitions ?? []).filter(c => c.status === "active").length
-
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
@@ -80,29 +76,8 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Usuarios registrados", value: (userStats as any)?.count ?? 0, icon: Users },
-          { label: "Competiciones activas", value: activeComps, icon: Trophy },
-          { label: "Pronos creados", value: totalPronos, icon: Calendar },
-          { label: "Partidos cargados", value: (matches ?? []).length, icon: Calendar },
-        ].map(({ label, value, icon: Icon }) => (
-          <Card key={label}>
-            <CardContent className="pt-5">
-              <div className="flex items-center gap-3">
-                <Icon className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-xl font-black">{value}</p>
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       <AdminPanel
+        userCount={(userStats as any)?.count ?? 0}
         competitions={(competitions ?? []) as any}
         allMatches={(matches ?? []) as Match[]}
         pronosByCompetition={pronosByCompetition}
