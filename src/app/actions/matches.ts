@@ -3,6 +3,44 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
+function normalize(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "") // remove accents
+    .replace(/[^a-z0-9 ]/g, "")                       // remove special chars
+    .replace(/\s+/g, " ").trim()
+}
+
+function levenshtein(a: string, b: string): number {
+  const dp = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) => i === 0 ? j : j === 0 ? i : 0)
+  )
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+  return dp[a.length][b.length]
+}
+
+// Matches "Mbappe" with "Kylian Mbappé", "messi" with "Lionel Messi", "Haland" with "Haaland"
+function isNameMatch(userInput: string, adminAnswer: string): boolean {
+  const a = normalize(userInput)
+  const b = normalize(adminAnswer)
+  if (a === b) return true
+  // One is a substring of the other (handles "Messi" in "Lionel Messi")
+  if (a.includes(b) || b.includes(a)) return true
+  // Any significant word matches (≥4 chars to skip "de", "van", "del")
+  const wordsA = a.split(" ").filter(w => w.length >= 4)
+  const wordsB = b.split(" ").filter(w => w.length >= 4)
+  if (wordsA.some(wa => wordsB.some(wb => wa === wb))) return true
+  // Fuzzy: last word of each with Levenshtein ≤2 (handles "Haland"/"Haaland", "Mbappe"/"Mbappe")
+  const lastA = wordsA.at(-1) ?? a
+  const lastB = wordsB.at(-1) ?? b
+  if (lastA.length >= 4 && lastB.length >= 4 && levenshtein(lastA, lastB) <= 2) return true
+  return false
+}
+
 async function requireAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -485,7 +523,7 @@ async function scoreSpecialPredictionType(supabase: any, competitionId: string, 
   if (!allPreds?.length) return
 
   for (const pred of allPreds) {
-    const earned = pred.value.trim().toLowerCase() === correctValue.trim().toLowerCase() ? pts : 0
+    const earned = isNameMatch(pred.value, correctValue) ? pts : 0
     if (pred.points_earned === earned) continue // nothing changed
 
     await supabase
