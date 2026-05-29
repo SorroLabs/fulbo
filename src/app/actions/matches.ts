@@ -150,23 +150,22 @@ async function takeSnapshots(supabase: any, matchId: string) {
   // Remove any existing snapshots for this match (handles re-scoring)
   await supabase.from("leaderboard_snapshots").delete().eq("match_id", matchId)
 
-  // Global snapshot from competition_participants
-  const { data: participants } = await supabase
-    .from("competition_participants")
-    .select("user_id, total_points, profiles(full_name, nickname)")
-    .eq("competition_id", competitionId)
-    .order("total_points", { ascending: false })
+  // Global snapshot — read from predictions directly (same as get_global_leaderboard RPC)
+  const { data: globalRanking } = await supabase.rpc("get_global_leaderboard", {
+    p_competition_id: competitionId,
+    p_limit: 200,
+  })
 
-  if (participants?.length) {
+  if (globalRanking?.length) {
     await supabase.from("leaderboard_snapshots").insert({
       competition_id: competitionId,
       prono_id: null,
       match_id: matchId,
-      snapshot_data: participants.map((p: any, i: number) => ({
+      snapshot_data: globalRanking.map((p: any) => ({
         user_id: p.user_id,
-        full_name: p.profiles?.nickname ?? p.profiles?.full_name ?? "Usuario",
+        full_name: p.full_name ?? "Usuario",
         total_points: p.total_points,
-        rank: i + 1,
+        rank: p.rank,
       })),
     })
   }

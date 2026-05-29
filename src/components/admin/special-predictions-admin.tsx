@@ -18,6 +18,7 @@ const SPECIALS = [
 interface Props {
   competitions: Competition[]
   specialPredictionCounts: Record<string, Record<string, number>>
+  defaultCompetitionId?: string
 }
 
 function SpecialRow({ type, label, icon: Icon, note, competitionId, currentAnswer }: {
@@ -72,8 +73,8 @@ function SpecialRow({ type, label, icon: Icon, note, competitionId, currentAnswe
   )
 }
 
-export function SpecialPredictionsAdmin({ competitions, specialPredictionCounts }: Props) {
-  const [selectedId, setSelectedId] = useState(competitions[0]?.id ?? "")
+export function SpecialPredictionsAdmin({ competitions, specialPredictionCounts, defaultCompetitionId }: Props) {
+  const [selectedId, setSelectedId] = useState(defaultCompetitionId ?? competitions[0]?.id ?? "")
   const counts = specialPredictionCounts[selectedId] ?? {}
 
   if (!competitions.length) return null

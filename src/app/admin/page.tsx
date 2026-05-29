@@ -1,12 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ShieldCheck, Users, Trophy, Star } from "lucide-react"
-import { ParticipantsAdmin } from "@/components/admin/participants-admin"
-import { CompetitionsAdmin } from "@/components/admin/competitions-admin"
-import { MatchesAdmin } from "@/components/admin/matches-admin"
-import { SpecialPredictionsAdmin } from "@/components/admin/special-predictions-admin"
+import { Card, CardContent } from "@/components/ui/card"
+import { ShieldCheck, Users, Trophy, Calendar } from "lucide-react"
+import { AdminPanel } from "@/components/admin/admin-panel"
 import type { Match } from "@/types"
 
 export default async function AdminPage() {
@@ -17,24 +13,62 @@ export default async function AdminPage() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   if (profile?.role !== "admin") redirect("/dashboard")
 
-  const [{ data: pendingParticipants }, { data: competitions }, { data: stats }, { data: matches }, { data: specialPredCounts }] = await Promise.all([
-    supabase
-      .from("competition_participants")
-      .select("*, profiles(*), competitions(name)")
-      .eq("status", "pending")
-      .order("created_at"),
+  const [
+    { data: competitions },
+    { data: userStats },
+    { data: matches },
+    { data: specialPredCounts },
+    { data: pronos },
+  ] = await Promise.all([
     supabase.from("competitions").select("*").order("start_date", { ascending: false }),
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("matches").select("*").order("match_date"),
     supabase.from("special_predictions").select("competition_id, type"),
+    supabase
+      .from("pronos")
+      .select("id, name, is_public, invite_code, competition_id, created_at, owner_id, profiles(full_name)")
+      .order("created_at", { ascending: false }),
   ])
 
-  // Build counts map: { competitionId: { type: count } }
+  // Member counts per prono
+  const pronoIds = (pronos ?? []).map((p: any) => p.id)
+  const { data: memberCounts } = pronoIds.length
+    ? await supabase
+        .from("prono_members")
+        .select("prono_id")
+        .in("prono_id", pronoIds)
+    : { data: [] }
+
+  const countByProno = new Map<string, number>()
+  for (const m of memberCounts ?? []) {
+    countByProno.set(m.prono_id, (countByProno.get(m.prono_id) ?? 0) + 1)
+  }
+
+  // Group pronos by competition
+  const pronosByCompetition: Record<string, any[]> = {}
+  for (const p of pronos ?? []) {
+    if (!pronosByCompetition[p.competition_id]) pronosByCompetition[p.competition_id] = []
+    pronosByCompetition[p.competition_id].push({
+      id: p.id,
+      name: p.name,
+      is_public: p.is_public,
+      invite_code: p.invite_code,
+      member_count: countByProno.get(p.id) ?? 0,
+      owner_name: (p as any).profiles?.full_name ?? null,
+      created_at: p.created_at,
+    })
+  }
+
+  // Special predictions counts
   const specialPredictionCounts: Record<string, Record<string, number>> = {}
   for (const row of specialPredCounts ?? []) {
     if (!specialPredictionCounts[row.competition_id]) specialPredictionCounts[row.competition_id] = {}
-    specialPredictionCounts[row.competition_id][row.type] = (specialPredictionCounts[row.competition_id][row.type] ?? 0) + 1
+    specialPredictionCounts[row.competition_id][row.type] =
+      (specialPredictionCounts[row.competition_id][row.type] ?? 0) + 1
   }
+
+  const totalPronos = (pronos ?? []).length
+  const activeComps = (competitions ?? []).filter(c => c.status === "active").length
 
   return (
     <div className="space-y-8">
@@ -42,17 +76,17 @@ export default async function AdminPage() {
         <ShieldCheck className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-black">Panel de administración</h1>
-          <p className="text-muted-foreground">Gestioná competiciones e inscripciones</p>
+          <p className="text-muted-foreground">fulbo.co · Mundial 2026</p>
         </div>
       </div>
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Usuarios totales", value: (stats as any)?.count ?? 0, icon: Users },
-          { label: "Competiciones", value: competitions?.length ?? 0, icon: Trophy },
-          { label: "Inscripciones pendientes", value: pendingParticipants?.length ?? 0, icon: ShieldCheck },
-          { label: "Competitions activas", value: competitions?.filter(c => c.status === "active").length ?? 0, icon: Trophy },
+          { label: "Usuarios registrados", value: (userStats as any)?.count ?? 0, icon: Users },
+          { label: "Competiciones activas", value: activeComps, icon: Trophy },
+          { label: "Pronos creados", value: totalPronos, icon: Calendar },
+          { label: "Partidos cargados", value: (matches ?? []).length, icon: Calendar },
         ].map(({ label, value, icon: Icon }) => (
           <Card key={label}>
             <CardContent className="pt-5">
@@ -68,49 +102,12 @@ export default async function AdminPage() {
         ))}
       </div>
 
-      <Tabs defaultValue="matches">
-        <TabsList className="rounded-full">
-          <TabsTrigger value="matches" className="rounded-full gap-2">
-            Partidos
-          </TabsTrigger>
-          <TabsTrigger value="participants" className="rounded-full gap-2">
-            <Users className="h-4 w-4" /> Inscripciones
-            {(pendingParticipants?.length ?? 0) > 0 && (
-              <span className="bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {pendingParticipants!.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="competitions" className="rounded-full gap-2">
-            <Trophy className="h-4 w-4" /> Competiciones
-          </TabsTrigger>
-          <TabsTrigger value="specials" className="rounded-full gap-2">
-            <Star className="h-4 w-4" /> Especiales
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="matches" className="mt-6">
-          <MatchesAdmin
-            competitions={(competitions ?? []) as any}
-            allMatches={(matches ?? []) as Match[]}
-          />
-        </TabsContent>
-
-        <TabsContent value="participants" className="mt-6">
-          <ParticipantsAdmin participants={pendingParticipants ?? []} adminId={user.id} />
-        </TabsContent>
-
-        <TabsContent value="competitions" className="mt-6">
-          <CompetitionsAdmin competitions={competitions ?? []} />
-        </TabsContent>
-
-        <TabsContent value="specials" className="mt-6">
-          <SpecialPredictionsAdmin
-            competitions={(competitions ?? []) as any}
-            specialPredictionCounts={specialPredictionCounts}
-          />
-        </TabsContent>
-      </Tabs>
+      <AdminPanel
+        competitions={(competitions ?? []) as any}
+        allMatches={(matches ?? []) as Match[]}
+        pronosByCompetition={pronosByCompetition}
+        specialPredictionCounts={specialPredictionCounts}
+      />
     </div>
   )
 }

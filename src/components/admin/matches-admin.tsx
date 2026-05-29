@@ -135,10 +135,11 @@ function MatchRow({ match }: { match: Match }) {
 interface Props {
   competitions: Competition[]
   allMatches: Match[]
+  defaultCompetitionId?: string
 }
 
-export function MatchesAdmin({ competitions, allMatches }: Props) {
-  const [selectedId, setSelectedId] = useState(competitions[0]?.id ?? "")
+export function MatchesAdmin({ competitions, allMatches, defaultCompetitionId }: Props) {
+  const [selectedId, setSelectedId] = useState(defaultCompetitionId ?? competitions[0]?.id ?? "")
   const [filter, setFilter] = useState<"upcoming" | "finished" | "all">("upcoming")
   const [isCreating, startCreating] = useTransition()
   const [isDeleting, startDeleting] = useTransition()
