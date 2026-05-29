@@ -6,7 +6,7 @@ const POWER_UPS = [
   {
     icon: Clock,
     name: "Cambio tardío",
-    cost: 10,
+    cost: 20,
     color: "text-blue-500",
     bg: "bg-blue-500/10",
     description: "Editá tu predicción hasta 2 minutos antes del partido, incluso cuando ya está bloqueada.",
@@ -15,7 +15,7 @@ const POWER_UPS = [
   {
     icon: Zap,
     name: "Doble puntos",
-    cost: 20,
+    cost: 15,
     color: "text-yellow-500",
     bg: "bg-yellow-500/10",
     description: "Duplicá los puntos que ganés en un partido específico.",
@@ -33,7 +33,7 @@ const POWER_UPS = [
   {
     icon: Shield,
     name: "Comodín",
-    cost: 30,
+    cost: 25,
     color: "text-emerald-500",
     bg: "bg-emerald-500/10",
     description: "Protegé tu predicción: si el partido termina diferente a lo pronosticado, no perdés posición.",
