@@ -186,7 +186,7 @@ export const PHASE_MULTIPLIERS: PhaseMultiplier = {
 export const SPECIAL_PREDICTION_POINTS = {
   champion: 10,
   top_scorer: 8,
-  surprise_team: 8,
+  golden_ball: 8,
 }
 
 export const POWER_UP_COSTS: Record<PowerUpType, number> = {

@@ -22,7 +22,7 @@ interface Props {
 const SPECIALS = [
   { type: "champion" as const, label: "Campeón del torneo", icon: Trophy, pts: SPECIAL_PREDICTION_POINTS.champion, isTeam: true },
   { type: "top_scorer" as const, label: "Goleador del torneo", icon: Target, pts: SPECIAL_PREDICTION_POINTS.top_scorer, isTeam: false, placeholder: "Ej: Kylian Mbappé" },
-  { type: "surprise_team" as const, label: "Sorpresa del torneo", icon: Star, pts: SPECIAL_PREDICTION_POINTS.surprise_team, isTeam: true },
+  { type: "golden_ball" as const, label: "Balón de Oro (mejor jugador)", icon: Star, pts: SPECIAL_PREDICTION_POINTS.golden_ball, isTeam: false, placeholder: "Ej: Lionel Messi" },
 ]
 
 function TeamFlag({ name }: { name: string }) {

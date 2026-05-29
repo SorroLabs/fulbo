@@ -74,7 +74,7 @@ export async function saveSpecialPrediction({
 }: {
   userId: string
   competitionId: string
-  type: "champion" | "top_scorer" | "surprise_team"
+  type: "champion" | "top_scorer" | "golden_ball"
   value: string
 }) {
   const supabase = await createClient()

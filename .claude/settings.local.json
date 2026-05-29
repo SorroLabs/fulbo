@@ -22,7 +22,10 @@
       "Bash(git push *)",
       "Bash(grep *)",
       "Bash(xargs ls -la)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(xargs cat)",
+      "Bash(sed -n '186,195p' src/types/index.ts)",
+      "Bash(sed -n '94,105p' src/lib/supabase/schema.sql)"
     ]
   }
 }

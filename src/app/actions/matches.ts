@@ -92,6 +92,7 @@ export async function reportMatchResult({
   await takeSnapshots(supabase, matchId)
   await awardPhaseBonus(supabase, matchId)
   await awardMatchdayWinner(supabase, matchId)
+  await autoScoreChampion(supabase, matchId, homeScore, awayScore)
 
   revalidatePath("/admin")
   revalidatePath("/", "layout")
@@ -440,5 +441,91 @@ async function awardMatchdayWinner(supabase: any, matchId: string) {
       .update({ coins_in_prono: m.coins_in_prono + 15 })
       .eq("user_id", m.user_id)
       .eq("prono_id", m.prono_id)
+  }
+}
+
+async function autoScoreChampion(supabase: any, matchId: string, homeScore: number, awayScore: number) {
+  const { data: match } = await supabase
+    .from("matches")
+    .select("competition_id, home_team, away_team, phase")
+    .eq("id", matchId)
+    .single()
+  if (!match || match.phase !== "final") return
+  if (homeScore === awayScore) return // Penalties — admin must score manually
+
+  const champion = homeScore > awayScore ? match.home_team : match.away_team
+  await scoreSpecialPredictionType(supabase, match.competition_id, "champion", champion)
+}
+
+// Exported so admin can call it for top_scorer and golden_ball
+export async function scoreSpecialPredictions({
+  competitionId, type, correctValue,
+}: {
+  competitionId: string
+  type: "champion" | "top_scorer" | "golden_ball"
+  correctValue: string
+}) {
+  const { supabase, error } = await requireAdmin()
+  if (error || !supabase) return { error }
+  await scoreSpecialPredictionType(supabase, competitionId, type, correctValue)
+  revalidatePath("/admin")
+  revalidatePath("/", "layout")
+  return { success: true }
+}
+
+async function scoreSpecialPredictionType(supabase: any, competitionId: string, type: string, correctValue: string) {
+  const pts = type === "champion" ? 10 : 8
+
+  // Find all predictions for this type — reset first to allow re-scoring
+  const { data: allPreds } = await supabase
+    .from("special_predictions")
+    .select("id, user_id, value, points_earned")
+    .eq("competition_id", competitionId)
+    .eq("type", type)
+  if (!allPreds?.length) return
+
+  for (const pred of allPreds) {
+    const earned = pred.value.trim().toLowerCase() === correctValue.trim().toLowerCase() ? pts : 0
+    if (pred.points_earned === earned) continue // nothing changed
+
+    await supabase
+      .from("special_predictions")
+      .update({ points_earned: earned })
+      .eq("id", pred.id)
+
+    const delta = earned - (pred.points_earned ?? 0)
+    if (delta === 0) continue
+
+    // Update competition_participants
+    const { data: cp } = await supabase
+      .from("competition_participants")
+      .select("total_points")
+      .eq("user_id", pred.user_id)
+      .eq("competition_id", competitionId)
+      .single()
+    if (cp) {
+      await supabase
+        .from("competition_participants")
+        .update({ total_points: cp.total_points + delta })
+        .eq("user_id", pred.user_id)
+        .eq("competition_id", competitionId)
+    }
+
+    // Update prono_members for all pronos in this competition
+    const { data: pronoMembers } = await supabase
+      .from("prono_members")
+      .select("prono_id, total_points")
+      .eq("user_id", pred.user_id)
+      .in("prono_id",
+        (await supabase.from("pronos").select("id").eq("competition_id", competitionId)).data?.map((p: any) => p.id) ?? []
+      )
+
+    for (const pm of pronoMembers ?? []) {
+      await supabase
+        .from("prono_members")
+        .update({ total_points: pm.total_points + delta })
+        .eq("user_id", pred.user_id)
+        .eq("prono_id", pm.prono_id)
+    }
   }
 }

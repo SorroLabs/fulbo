@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus } from "lucide-react"
+import { Users, Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus, Star } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
 import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
@@ -11,6 +11,7 @@ import { PronoMatchesTab } from "@/components/prono/prono-matches-tab"
 import { PronoCoinsTab } from "@/components/prono/prono-coins-tab"
 import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
 import { PronoJoinButton } from "@/components/prono/prono-join-button"
+import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -39,7 +40,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
 
   const memberIds = (members ?? []).map((m: any) => m.user_id)
 
-  const [{ data: matches }, { data: allPredictions }, { data: myPowerUps }, { data: myMembership }, { data: myTransactions }] = await Promise.all([
+  const [{ data: matches }, { data: allPredictions }, { data: myPowerUps }, { data: myMembership }, { data: myTransactions }, { data: mySpecials }] = await Promise.all([
     supabase.from("matches").select("*").eq("competition_id", prono.competition_id)
       .not("home_team", "like", "Ganador%")
       .order("match_date"),
@@ -57,11 +58,20 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
     user
       ? supabase.from("coin_transactions").select("*").eq("prono_id", prono.id).eq("user_id", user.id).order("created_at", { ascending: false })
       : { data: [] },
+    user
+      ? supabase.from("special_predictions").select("*").eq("user_id", user.id).eq("competition_id", prono.competition_id)
+      : { data: [] },
   ])
 
   const isMember = members?.some((m: any) => m.user_id === user?.id)
   const isOwner = prono.owner_id === user?.id
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  const competition = (prono as any).competitions
+  const teams = Array.from(new Set(
+    (matches as Match[] | null)
+      ?.filter(m => m.phase === "groups")
+      .flatMap(m => [m.home_team, m.away_team]) ?? []
+  )).sort((a, b) => a.localeCompare(b, "es"))
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
@@ -134,14 +144,17 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
           <TabsTrigger value="matches" className="rounded-full gap-2">
             <Calendar className="h-4 w-4" /> Partidos
           </TabsTrigger>
-          <TabsTrigger value="members" className="rounded-full gap-2">
-            <Users className="h-4 w-4" /> Miembros
+          <TabsTrigger value="specials" className="rounded-full gap-2">
+            <Star className="h-4 w-4" /> Especiales
           </TabsTrigger>
           {isMember && (
             <TabsTrigger value="coins" className="rounded-full gap-2">
               <Coins className="h-4 w-4" /> Monedas
             </TabsTrigger>
           )}
+          <TabsTrigger value="members" className="rounded-full gap-2">
+            <Users className="h-4 w-4" /> Miembros
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="matches" className="mt-6">
@@ -241,6 +254,16 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="specials" className="mt-6">
+          <SpecialPredictionsForm
+            competitionId={prono.competition_id}
+            competitionStatus={competition?.status ?? "upcoming"}
+            userId={user?.id ?? null}
+            existing={mySpecials ?? []}
+            teams={teams}
+          />
         </TabsContent>
 
         <TabsContent value="members" className="mt-6">

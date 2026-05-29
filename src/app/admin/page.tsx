@@ -2,10 +2,11 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ShieldCheck, Users, Trophy, Coins } from "lucide-react"
+import { ShieldCheck, Users, Trophy, Star } from "lucide-react"
 import { ParticipantsAdmin } from "@/components/admin/participants-admin"
 import { CompetitionsAdmin } from "@/components/admin/competitions-admin"
 import { MatchesAdmin } from "@/components/admin/matches-admin"
+import { SpecialPredictionsAdmin } from "@/components/admin/special-predictions-admin"
 import type { Match } from "@/types"
 
 export default async function AdminPage() {
@@ -16,7 +17,7 @@ export default async function AdminPage() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   if (profile?.role !== "admin") redirect("/dashboard")
 
-  const [{ data: pendingParticipants }, { data: competitions }, { data: stats }, { data: matches }] = await Promise.all([
+  const [{ data: pendingParticipants }, { data: competitions }, { data: stats }, { data: matches }, { data: specialPredCounts }] = await Promise.all([
     supabase
       .from("competition_participants")
       .select("*, profiles(*), competitions(name)")
@@ -25,7 +26,15 @@ export default async function AdminPage() {
     supabase.from("competitions").select("*").order("start_date", { ascending: false }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("matches").select("*").order("match_date"),
+    supabase.from("special_predictions").select("competition_id, type"),
   ])
+
+  // Build counts map: { competitionId: { type: count } }
+  const specialPredictionCounts: Record<string, Record<string, number>> = {}
+  for (const row of specialPredCounts ?? []) {
+    if (!specialPredictionCounts[row.competition_id]) specialPredictionCounts[row.competition_id] = {}
+    specialPredictionCounts[row.competition_id][row.type] = (specialPredictionCounts[row.competition_id][row.type] ?? 0) + 1
+  }
 
   return (
     <div className="space-y-8">
@@ -75,6 +84,9 @@ export default async function AdminPage() {
           <TabsTrigger value="competitions" className="rounded-full gap-2">
             <Trophy className="h-4 w-4" /> Competiciones
           </TabsTrigger>
+          <TabsTrigger value="specials" className="rounded-full gap-2">
+            <Star className="h-4 w-4" /> Especiales
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="matches" className="mt-6">
@@ -90,6 +102,13 @@ export default async function AdminPage() {
 
         <TabsContent value="competitions" className="mt-6">
           <CompetitionsAdmin competitions={competitions ?? []} />
+        </TabsContent>
+
+        <TabsContent value="specials" className="mt-6">
+          <SpecialPredictionsAdmin
+            competitions={(competitions ?? []) as any}
+            specialPredictionCounts={specialPredictionCounts}
+          />
         </TabsContent>
       </Tabs>
     </div>
