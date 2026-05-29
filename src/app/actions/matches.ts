@@ -91,6 +91,7 @@ export async function reportMatchResult({
 
   await takeSnapshots(supabase, matchId)
   await awardPhaseBonus(supabase, matchId)
+  await awardMatchdayWinner(supabase, matchId)
 
   revalidatePath("/admin")
   revalidatePath("/", "layout")
@@ -322,6 +323,121 @@ async function awardPhaseBonus(supabase: any, matchId: string) {
     await supabase
       .from("prono_members")
       .update({ coins_in_prono: m.coins_in_prono + 10 })
+      .eq("user_id", m.user_id)
+      .eq("prono_id", m.prono_id)
+  }
+}
+
+async function awardMatchdayWinner(supabase: any, matchId: string) {
+  const { data: match } = await supabase
+    .from("matches")
+    .select("competition_id, phase, match_date, group_name")
+    .eq("id", matchId)
+    .single()
+  if (!match || match.phase === "final") return
+
+  const { competition_id: competitionId, phase } = match
+
+  // Fetch all matches in this phase
+  const { data: phaseMatches } = await supabase
+    .from("matches")
+    .select("id, status, match_date, group_name")
+    .eq("competition_id", competitionId)
+    .eq("phase", phase)
+  if (!phaseMatches?.length) return
+
+  // Determine which match group we're in (matchday for groups, full phase for knockout)
+  let groupMatchIds: string[]
+  let winnerLabel: string
+
+  if (phase === "groups") {
+    const matchday = computeMatchday(matchId, phaseMatches)
+    // Build full matchday map to get all match IDs for this fecha
+    const matchdayMap = new Map<string, number>()
+    const byGroup = new Map<string, typeof phaseMatches>()
+    for (const m of phaseMatches) {
+      const g = m.group_name ?? "__"
+      if (!byGroup.has(g)) byGroup.set(g, [])
+      byGroup.get(g)!.push(m)
+    }
+    for (const gMatches of byGroup.values()) {
+      const sorted = [...gMatches].sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+      let fecha = 1
+      let prevTime: number | null = null
+      for (const m of sorted) {
+        const t = new Date(m.match_date).getTime()
+        if (prevTime !== null && t - prevTime > 48 * 3600 * 1000) fecha++
+        matchdayMap.set(m.id, fecha)
+        prevTime = t
+      }
+    }
+    groupMatchIds = phaseMatches.filter((m: any) => matchdayMap.get(m.id) === matchday).map((m: any) => m.id)
+    winnerLabel = `Mejor predictor · Fecha ${matchday}`
+  } else {
+    groupMatchIds = phaseMatches.map((m: any) => m.id)
+    winnerLabel = `Mejor predictor · ${PHASE_LABELS[phase] ?? phase}`
+  }
+
+  // Check all matches in this group are finished
+  const groupMatches = phaseMatches.filter((m: any) => groupMatchIds.includes(m.id))
+  if (!groupMatches.every((m: any) => m.status === "finished")) return
+
+  // Check not already awarded (use prono_id = null as global dedup key since winner is same across pronos)
+  const { data: existing } = await supabase
+    .from("coin_transactions")
+    .select("id")
+    .eq("competition_id", competitionId)
+    .eq("type", "matchday_winner")
+    .eq("reason", winnerLabel)
+    .limit(1)
+  if (existing?.length) return
+
+  // Get points earned per user for this group of matches
+  const { data: preds } = await supabase
+    .from("predictions")
+    .select("user_id, points_earned")
+    .eq("competition_id", competitionId)
+    .in("match_id", groupMatchIds)
+
+  const pointsByUser = new Map<string, number>()
+  for (const p of preds ?? []) {
+    if (p.points_earned == null) continue
+    pointsByUser.set(p.user_id, (pointsByUser.get(p.user_id) ?? 0) + p.points_earned)
+  }
+  if (!pointsByUser.size) return
+
+  const maxPoints = Math.max(...pointsByUser.values())
+  if (maxPoints === 0) return
+  const winnerIds = new Set([...pointsByUser.entries()].filter(([, pts]) => pts === maxPoints).map(([id]) => id))
+
+  // Get all prono members that are winners
+  const { data: pronos } = await supabase
+    .from("pronos").select("id").eq("competition_id", competitionId)
+  if (!pronos?.length) return
+
+  const { data: members } = await supabase
+    .from("prono_members")
+    .select("user_id, prono_id, coins_in_prono")
+    .in("prono_id", pronos.map((p: any) => p.id))
+    .in("user_id", [...winnerIds])
+
+  if (!members?.length) return
+
+  await supabase.from("coin_transactions").insert(
+    members.map((m: any) => ({
+      user_id: m.user_id,
+      prono_id: m.prono_id,
+      competition_id: competitionId,
+      amount: 15,
+      type: "matchday_winner",
+      reason: winnerLabel,
+    }))
+  )
+
+  for (const m of members) {
+    await supabase
+      .from("prono_members")
+      .update({ coins_in_prono: m.coins_in_prono + 15 })
       .eq("user_id", m.user_id)
       .eq("prono_id", m.prono_id)
   }
