@@ -33,9 +33,10 @@ export function AdminPanel({ userCount, competitions, allMatches, pronosByCompet
   const active = competitions.filter(c => c.status !== "finished")
   const finished = competitions.filter(c => c.status === "finished")
 
-  const [view, setView] = useState<"active" | "finished" | null>(active.length > 0 ? "active" : null)
-  const [selectedId, setSelectedId] = useState(active[0]?.id ?? "")
+  const [view, setView] = useState<"active" | "finished" | null>(null)
+  const [selectedId, setSelectedId] = useState<string>("")
 
+  const selectedComp = active.find(c => c.id === selectedId)
   const pronos = pronosByCompetition[selectedId] ?? []
 
   return (
@@ -125,110 +126,109 @@ export function AdminPanel({ userCount, competitions, allMatches, pronosByCompet
       {/* Active competition panel */}
       {view === "active" && (
         <div className="space-y-5">
-          {/* Competition selector (only if multiple) */}
-          {active.length > 1 && (
-            <div className="flex flex-wrap gap-2">
+          {/* Dropdown selector — always shown, always required */}
+          <div className="max-w-sm">
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide block mb-2">
+              Seleccioná una competición
+            </label>
+            <select
+              value={selectedId}
+              onChange={e => setSelectedId(e.target.value)}
+              className="w-full h-10 px-3 rounded-xl border border-input bg-background text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              <option value="" disabled>Elegir competición...</option>
               {active.map(comp => (
-                <button
-                  key={comp.id}
-                  onClick={() => setSelectedId(comp.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all",
-                    comp.id === selectedId
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/40"
-                  )}
-                >
-                  <Trophy className="h-3.5 w-3.5" />
+                <option key={comp.id} value={comp.id}>
                   {comp.name} · {comp.season}
-                </button>
+                </option>
               ))}
-            </div>
-          )}
+            </select>
+          </div>
 
-          {/* If only one, show its name as header */}
-          {active.length === 1 && (
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-black">{active[0].name}</h2>
-              <span className="text-muted-foreground text-sm">{active[0].season}</span>
-            </div>
-          )}
+          {/* Tabs — only shown once a competition is selected */}
+          {selectedComp && (
+            <>
+              <div className="flex items-center gap-2 pb-1 border-b border-border/50">
+                <Trophy className="h-4 w-4 text-primary" />
+                <span className="font-black">{selectedComp.name}</span>
+                <span className="text-muted-foreground text-sm">{selectedComp.season}</span>
+              </div>
 
-          {/* Tabs */}
-          <Tabs defaultValue="matches">
-            <TabsList className="rounded-full">
-              <TabsTrigger value="matches" className="rounded-full gap-2">
-                <Calendar className="h-4 w-4" /> Partidos
-              </TabsTrigger>
-              <TabsTrigger value="pronos" className="rounded-full gap-2">
-                <Users className="h-4 w-4" /> Pronos
-                <span className="bg-muted text-muted-foreground text-xs font-bold rounded-full px-1.5">
-                  {pronos.length}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="specials" className="rounded-full gap-2">
-                <Star className="h-4 w-4" /> Especiales
-              </TabsTrigger>
-            </TabsList>
+              <Tabs defaultValue="matches">
+                <TabsList className="rounded-full">
+                  <TabsTrigger value="matches" className="rounded-full gap-2">
+                    <Calendar className="h-4 w-4" /> Partidos
+                  </TabsTrigger>
+                  <TabsTrigger value="pronos" className="rounded-full gap-2">
+                    <Users className="h-4 w-4" /> Pronos
+                    <span className="bg-muted text-muted-foreground text-xs font-bold rounded-full px-1.5">
+                      {pronos.length}
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger value="specials" className="rounded-full gap-2">
+                    <Star className="h-4 w-4" /> Especiales
+                  </TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="matches" className="mt-6">
-              <MatchesAdmin
-                competitions={active}
-                allMatches={allMatches}
-                defaultCompetitionId={selectedId}
-              />
-            </TabsContent>
+                <TabsContent value="matches" className="mt-6">
+                  <MatchesAdmin
+                    competitions={active}
+                    allMatches={allMatches}
+                    defaultCompetitionId={selectedId}
+                  />
+                </TabsContent>
 
-            <TabsContent value="pronos" className="mt-6">
-              {pronos.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="py-10 text-center text-muted-foreground">
-                    No hay pronos creados para esta competición.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-2">
-                  {pronos.map(prono => (
-                    <Card key={prono.id}>
-                      <CardContent className="py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-sm truncate">{prono.name}</span>
-                              {prono.is_public
-                                ? <Badge variant="secondary" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Público</Badge>
-                                : <Badge variant="outline" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Privado</Badge>}
-                            </div>
-                            <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1"><Crown className="h-3 w-3" /> {prono.owner_name ?? "—"}</span>
-                              <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {prono.member_count} miembros</span>
-                              <span>Código: <span className="font-mono font-bold">{prono.invite_code}</span></span>
-                            </div>
-                          </div>
-                          <Link
-                            href={`/pronos/${prono.invite_code}`}
-                            className="text-xs text-primary hover:underline shrink-0"
-                            target="_blank"
-                          >
-                            Ver →
-                          </Link>
-                        </div>
+                <TabsContent value="pronos" className="mt-6">
+                  {pronos.length === 0 ? (
+                    <Card className="border-dashed">
+                      <CardContent className="py-10 text-center text-muted-foreground">
+                        No hay pronos creados para esta competición.
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+                  ) : (
+                    <div className="space-y-2">
+                      {pronos.map(prono => (
+                        <Card key={prono.id}>
+                          <CardContent className="py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-semibold text-sm truncate">{prono.name}</span>
+                                  {prono.is_public
+                                    ? <Badge variant="secondary" className="gap-1 text-xs"><Globe className="h-3 w-3" /> Público</Badge>
+                                    : <Badge variant="outline" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Privado</Badge>}
+                                </div>
+                                <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1"><Crown className="h-3 w-3" /> {prono.owner_name ?? "—"}</span>
+                                  <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {prono.member_count} miembros</span>
+                                  <span>Código: <span className="font-mono font-bold">{prono.invite_code}</span></span>
+                                </div>
+                              </div>
+                              <Link
+                                href={`/pronos/${prono.invite_code}`}
+                                className="text-xs text-primary hover:underline shrink-0"
+                                target="_blank"
+                              >
+                                Ver →
+                              </Link>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
 
-            <TabsContent value="specials" className="mt-6">
-              <SpecialPredictionsAdmin
-                competitions={active}
-                specialPredictionCounts={specialPredictionCounts}
-                defaultCompetitionId={selectedId}
-              />
-            </TabsContent>
-          </Tabs>
+                <TabsContent value="specials" className="mt-6">
+                  <SpecialPredictionsAdmin
+                    competitions={active}
+                    specialPredictionCounts={specialPredictionCounts}
+                    defaultCompetitionId={selectedId}
+                  />
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
         </div>
       )}
 

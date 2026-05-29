@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { ArrowLeft, ShieldCheck } from "lucide-react"
+import { ThemeToggle } from "@/components/layout/theme-toggle"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -28,8 +29,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <span className="font-bold text-sm">Panel de administración</span>
           </div>
 
-          {/* Right: who's logged in */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {/* Right: theme toggle + who's logged in */}
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <ThemeToggle />
             {profile?.avatar_url && (
               <img src={profile.avatar_url} alt="" className="w-6 h-6 rounded-full" />
             )}
