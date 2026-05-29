@@ -14,13 +14,13 @@ export default async function AdminPage() {
 
   const [
     { data: competitions },
-    { data: userStats },
+    { data: users, count: userCount },
     { data: matches },
     { data: specialPredCounts },
     { data: pronos },
   ] = await Promise.all([
     supabase.from("competitions").select("*").order("start_date", { ascending: false }),
-    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase.from("profiles").select("id, full_name, nickname, avatar_url, role, created_at", { count: "exact" }).order("created_at", { ascending: false }),
     supabase.from("matches").select("*").order("match_date"),
     supabase.from("special_predictions").select("competition_id, type"),
     supabase
@@ -32,10 +32,7 @@ export default async function AdminPage() {
   // Member counts per prono
   const pronoIds = (pronos ?? []).map((p: any) => p.id)
   const { data: memberCounts } = pronoIds.length
-    ? await supabase
-        .from("prono_members")
-        .select("prono_id")
-        .in("prono_id", pronoIds)
+    ? await supabase.from("prono_members").select("prono_id").in("prono_id", pronoIds)
     : { data: [] }
 
   const countByProno = new Map<string, number>()
@@ -43,7 +40,6 @@ export default async function AdminPage() {
     countByProno.set(m.prono_id, (countByProno.get(m.prono_id) ?? 0) + 1)
   }
 
-  // Group pronos by competition
   const pronosByCompetition: Record<string, any[]> = {}
   for (const p of pronos ?? []) {
     if (!pronosByCompetition[p.competition_id]) pronosByCompetition[p.competition_id] = []
@@ -58,7 +54,6 @@ export default async function AdminPage() {
     })
   }
 
-  // Special predictions counts
   const specialPredictionCounts: Record<string, Record<string, number>> = {}
   for (const row of specialPredCounts ?? []) {
     if (!specialPredictionCounts[row.competition_id]) specialPredictionCounts[row.competition_id] = {}
@@ -77,7 +72,8 @@ export default async function AdminPage() {
       </div>
 
       <AdminPanel
-        userCount={(userStats as any)?.count ?? 0}
+        userCount={userCount ?? 0}
+        users={users ?? []}
         competitions={(competitions ?? []) as any}
         allMatches={(matches ?? []) as Match[]}
         pronosByCompetition={pronosByCompetition}

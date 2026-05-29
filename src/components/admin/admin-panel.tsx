@@ -1,15 +1,69 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MatchesAdmin } from "@/components/admin/matches-admin"
 import { SpecialPredictionsAdmin } from "@/components/admin/special-predictions-admin"
-import { Trophy, Calendar, Star, Users, Globe, Lock, Crown, Archive, ChevronRight } from "lucide-react"
+import { Trophy, Calendar, Star, Users, Globe, Lock, Crown, Archive, ChevronRight, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { setUserRole } from "@/app/actions/admin"
+import { toast } from "sonner"
 import Link from "next/link"
 import type { Match, Competition } from "@/types"
+
+function UserRow({ user }: { user: { id: string; full_name: string | null; nickname: string | null; avatar_url: string | null; role: string | null; created_at: string } }) {
+  const [isPending, startTransition] = useTransition()
+  const isAdmin = user.role === "admin"
+  const initials = (user.full_name ?? user.nickname ?? "?").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
+
+  function toggleRole() {
+    startTransition(async () => {
+      const res = await setUserRole({ targetUserId: user.id, role: isAdmin ? "user" : "admin" })
+      if (res.error) toast.error(res.error)
+      else toast.success(isAdmin ? "Rol removido" : "Promovido a admin")
+    })
+  }
+
+  return (
+    <Card>
+      <CardContent className="py-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9 shrink-0">
+            <AvatarImage src={user.avatar_url ?? undefined} />
+            <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm truncate">{user.full_name ?? "—"}</span>
+              {user.nickname && <span className="text-xs text-muted-foreground">@{user.nickname}</span>}
+              {isAdmin && (
+                <Badge variant="default" className="gap-1 text-xs h-5">
+                  <ShieldCheck className="h-3 w-3" /> Admin
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Se unió {new Date(user.created_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant={isAdmin ? "outline" : "secondary"}
+            onClick={toggleRole}
+            disabled={isPending}
+            className="rounded-full h-7 text-xs shrink-0"
+          >
+            {isPending ? "..." : isAdmin ? "Quitar admin" : "Hacer admin"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 interface Prono {
   id: string
@@ -21,19 +75,29 @@ interface Prono {
   created_at: string
 }
 
+interface User {
+  id: string
+  full_name: string | null
+  nickname: string | null
+  avatar_url: string | null
+  role: string | null
+  created_at: string
+}
+
 interface Props {
   userCount: number
+  users: User[]
   competitions: Competition[]
   allMatches: Match[]
   pronosByCompetition: Record<string, Prono[]>
   specialPredictionCounts: Record<string, Record<string, number>>
 }
 
-export function AdminPanel({ userCount, competitions, allMatches, pronosByCompetition, specialPredictionCounts }: Props) {
+export function AdminPanel({ userCount, users, competitions, allMatches, pronosByCompetition, specialPredictionCounts }: Props) {
   const active = competitions.filter(c => c.status !== "finished")
   const finished = competitions.filter(c => c.status === "finished")
 
-  const [view, setView] = useState<"active" | "finished" | null>(null)
+  const [view, setView] = useState<"users" | "active" | "finished" | null>(null)
   const [selectedId, setSelectedId] = useState<string>("")
 
   const selectedComp = active.find(c => c.id === selectedId)
@@ -44,19 +108,28 @@ export function AdminPanel({ userCount, competitions, allMatches, pronosByCompet
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Usuarios */}
-        <Card>
-          <CardContent className="pt-5 pb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Users className="h-5 w-5 text-primary" />
+        <button onClick={() => setView(v => v === "users" ? null : "users")} className="text-left">
+          <Card className={cn(
+            "transition-all cursor-pointer hover:border-primary/40",
+            view === "users" && "border-primary/60 bg-primary/5"
+          )}>
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                  view === "users" ? "bg-primary text-primary-foreground" : "bg-primary/10"
+                )}>
+                  <Users className={cn("h-5 w-5", view === "users" ? "text-primary-foreground" : "text-primary")} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-2xl font-black">{userCount}</p>
+                  <p className="text-xs text-muted-foreground">Usuarios registrados</p>
+                </div>
+                <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", view === "users" && "rotate-90")} />
               </div>
-              <div>
-                <p className="text-2xl font-black">{userCount}</p>
-                <p className="text-xs text-muted-foreground">Usuarios registrados</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </button>
 
         {/* Activas */}
         <button
@@ -122,6 +195,18 @@ export function AdminPanel({ userCount, competitions, allMatches, pronosByCompet
           </Card>
         </button>
       </div>
+
+      {/* Users panel */}
+      {view === "users" && (
+        <div className="space-y-3">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Usuarios registrados</p>
+          <div className="space-y-2">
+            {users.map(u => (
+              <UserRow key={u.id} user={u} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Active competition panel */}
       {view === "active" && (
