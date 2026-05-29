@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { revalidatePath } from "next/cache"
 
 export async function savePrediction({
   userId,
@@ -97,5 +98,6 @@ export async function saveSpecialPrediction({
   }, { onConflict: "user_id,competition_id,type" })
 
   if (error) return { error: "Error al guardar la predicción especial" }
+  revalidatePath("/", "layout")
   return { success: true }
 }
