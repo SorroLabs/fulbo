@@ -123,7 +123,7 @@ export interface CoinTransaction {
   id: string
   user_id: string
   amount: number
-  type: "earn" | "spend" | "admin_grant"
+  type: "earn" | "spend" | "admin_grant" | "phase_bonus"
   reason: string
   competition_id: string | null
   match_id: string | null

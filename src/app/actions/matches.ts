@@ -90,6 +90,7 @@ export async function reportMatchResult({
   await supabase.rpc("score_match", { p_match_id: matchId })
 
   await takeSnapshots(supabase, matchId)
+  await awardPhaseBonus(supabase, matchId)
 
   revalidatePath("/admin")
   revalidatePath("/", "layout")
@@ -164,5 +165,164 @@ async function takeSnapshots(supabase: any, matchId: string) {
 
   if (inserts.length) {
     await supabase.from("leaderboard_snapshots").insert(inserts)
+  }
+}
+
+const PHASE_LABELS: Record<string, string> = {
+  groups: "Grupos",
+  round_of_32: "Ronda de 32",
+  round_of_16: "Octavos de final",
+  quarterfinals: "Cuartos de final",
+  semifinals: "Semifinales",
+  third_place: "Tercer puesto",
+}
+
+// Derives group-stage matchday using same ≤48h clustering as client-side computeMatchdays
+function computeMatchday(matchId: string, groupMatches: { id: string; match_date: string; group_name: string | null }[]): number {
+  const byGroup = new Map<string, typeof groupMatches>()
+  for (const m of groupMatches) {
+    const g = m.group_name ?? "__"
+    if (!byGroup.has(g)) byGroup.set(g, [])
+    byGroup.get(g)!.push(m)
+  }
+  for (const gMatches of byGroup.values()) {
+    const sorted = [...gMatches].sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+    let fecha = 1
+    let prevTime: number | null = null
+    for (const m of sorted) {
+      const t = new Date(m.match_date).getTime()
+      if (prevTime !== null && t - prevTime > 48 * 3600 * 1000) fecha++
+      if (m.id === matchId) return fecha
+      prevTime = t
+    }
+  }
+  return 1
+}
+
+async function awardPhaseBonus(supabase: any, matchId: string) {
+  // Get the scored match
+  const { data: match } = await supabase
+    .from("matches")
+    .select("competition_id, phase, match_date, group_name")
+    .eq("id", matchId)
+    .single()
+  if (!match || match.phase === "final") return
+
+  const { competition_id: competitionId, phase } = match
+
+  // Fetch all matches for this competition in this phase
+  const { data: phaseMatches } = await supabase
+    .from("matches")
+    .select("id, status, match_date, group_name")
+    .eq("competition_id", competitionId)
+    .eq("phase", phase)
+  if (!phaseMatches?.length) return
+
+  // Determine bonus key: for groups, per matchday; for knockout, per phase
+  let bonusKey: string
+  let groupMatchIds: string[]
+
+  if (phase === "groups") {
+    const matchday = computeMatchday(matchId, phaseMatches)
+    bonusKey = `groups_fecha_${matchday}`
+    // Determine which matches belong to this matchday using the same clustering
+    const matchdayMap = new Map<string, number>()
+    const byGroup = new Map<string, typeof phaseMatches>()
+    for (const m of phaseMatches) {
+      const g = m.group_name ?? "__"
+      if (!byGroup.has(g)) byGroup.set(g, [])
+      byGroup.get(g)!.push(m)
+    }
+    for (const gMatches of byGroup.values()) {
+      const sorted = [...gMatches].sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+      let fecha = 1
+      let prevTime: number | null = null
+      for (const m of sorted) {
+        const t = new Date(m.match_date).getTime()
+        if (prevTime !== null && t - prevTime > 48 * 3600 * 1000) fecha++
+        matchdayMap.set(m.id, fecha)
+        prevTime = t
+      }
+    }
+    groupMatchIds = phaseMatches.filter((m: any) => matchdayMap.get(m.id) === matchday).map((m: any) => m.id)
+  } else {
+    bonusKey = phase
+    groupMatchIds = phaseMatches.map((m: any) => m.id)
+  }
+
+  // Check all matches in this group are finished
+  const groupStatuses = phaseMatches.filter((m: any) => groupMatchIds.includes(m.id))
+  if (!groupStatuses.every((m: any) => m.status === "finished")) return
+
+  // Get all pronos for this competition
+  const { data: pronos } = await supabase
+    .from("pronos")
+    .select("id")
+    .eq("competition_id", competitionId)
+  if (!pronos?.length) return
+
+  const pronoIds = pronos.map((p: any) => p.id)
+
+  // Get all prono members
+  const { data: members } = await supabase
+    .from("prono_members")
+    .select("user_id, prono_id, coins_in_prono")
+    .in("prono_id", pronoIds)
+  if (!members?.length) return
+
+  // Build bonus label — used for dedup and display
+  const label = phase === "groups"
+    ? `Fecha ${bonusKey.split("_").pop()} completa · ${PHASE_LABELS.groups}`
+    : `${PHASE_LABELS[phase] ?? phase} completo`
+
+  // Get existing phase bonuses to avoid duplicates
+  const { data: existing } = await supabase
+    .from("coin_transactions")
+    .select("user_id, prono_id")
+    .eq("competition_id", competitionId)
+    .eq("type", "phase_bonus")
+    .eq("reason", label)
+  const alreadyAwarded = new Set((existing ?? []).map((e: any) => `${e.user_id}:${e.prono_id}`))
+
+  // Get predictions for this group of matches
+  const { data: preds } = await supabase
+    .from("predictions")
+    .select("user_id, match_id")
+    .eq("competition_id", competitionId)
+    .in("match_id", groupMatchIds)
+
+  const predsByUser = new Map<string, Set<string>>()
+  for (const p of preds ?? []) {
+    if (!predsByUser.has(p.user_id)) predsByUser.set(p.user_id, new Set())
+    predsByUser.get(p.user_id)!.add(p.match_id)
+  }
+
+  // Award bonus to eligible members
+  const toAward = members.filter((m: any) => {
+    if (alreadyAwarded.has(`${m.user_id}:${m.prono_id}`)) return false
+    const userPreds = predsByUser.get(m.user_id)
+    return groupMatchIds.every((id: string) => userPreds?.has(id))
+  })
+
+  if (!toAward.length) return
+
+  await supabase.from("coin_transactions").insert(
+    toAward.map((m: any) => ({
+      user_id: m.user_id,
+      prono_id: m.prono_id,
+      competition_id: competitionId,
+      amount: 10,
+      type: "phase_bonus",
+      reason: label,
+    }))
+  )
+
+  // Update coins_in_prono for each recipient
+  for (const m of toAward) {
+    await supabase
+      .from("prono_members")
+      .update({ coins_in_prono: m.coins_in_prono + 10 })
+      .eq("user_id", m.user_id)
+      .eq("prono_id", m.prono_id)
   }
 }

@@ -43,8 +43,9 @@ const POWER_UPS = [
 
 const HOW_TO_EARN = [
   { action: "Unirse a un prono", reward: "100 🪙", icon: Trophy },
-  { action: "Resultado correcto (1-X-2)", reward: "1 🪙", icon: CheckCircle },
   { action: "Marcador exacto", reward: "3 🪙", icon: Star },
+  { action: "Resultado correcto (1-X-2)", reward: "1 🪙", icon: CheckCircle },
+  { action: "Predecir todos los partidos de una fase", reward: "10 🪙", icon: Zap },
 ]
 
 export default function CoinsPage() {
