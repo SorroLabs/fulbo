@@ -7,7 +7,7 @@ export default async function NuevaProno() {
   const { data: competitions } = await supabase
     .from("competitions")
     .select("id, name, season, status")
-    .in("status", ["upcoming", "active"])
+    .neq("status", "finished")
     .order("start_date")
 
   return (

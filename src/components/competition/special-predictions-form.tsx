@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 
 interface Props {
   competitionId: string
-  competitionStatus: string
+  isLocked: boolean
   userId: string | null
   existing: any[]
   teams: string[]
@@ -136,7 +136,7 @@ function TeamCombobox({ teams, value, onChange, disabled }: {
   )
 }
 
-export function SpecialPredictionsForm({ competitionId, competitionStatus, userId, existing, teams }: Props) {
+export function SpecialPredictionsForm({ competitionId, isLocked, userId, existing, teams }: Props) {
   const existingMap = new Map(existing.map(e => [e.type, e]))
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(SPECIALS.map(s => [s.type, existingMap.get(s.type)?.value ?? ""]))
@@ -144,7 +144,7 @@ export function SpecialPredictionsForm({ competitionId, competitionStatus, userI
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [isPending, startTransition] = useTransition()
 
-  const isLocked = competitionStatus !== "upcoming" || !userId
+  const locked = isLocked || !userId
 
   function handleSave(type: string, value: string) {
     if (!userId || !value.trim()) return
@@ -172,7 +172,7 @@ export function SpecialPredictionsForm({ competitionId, competitionStatus, userI
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
         Las predicciones especiales se cargan antes de que empiece el torneo y valen puntos extra.
-        {isLocked && competitionStatus !== "upcoming" && " Ya no se pueden modificar."}
+        {locked && " Ya no se pueden modificar."}
       </p>
       {SPECIALS.map(({ type, label, icon: Icon, pts, isTeam, placeholder }) => {
         const saved = existingMap.get(type)
@@ -205,7 +205,7 @@ export function SpecialPredictionsForm({ competitionId, competitionStatus, userI
                       teams={teams}
                       value={values[type]}
                       onChange={v => { setValues(prev => ({ ...prev, [type]: v })); handleSave(type, v) }}
-                      disabled={isLocked}
+                      disabled={locked}
                     />
                   ) : (
                     <input
@@ -213,7 +213,7 @@ export function SpecialPredictionsForm({ competitionId, competitionStatus, userI
                       onChange={e => setValues(v => ({ ...v, [type]: e.target.value }))}
                       onBlur={e => handleSave(type, e.target.value)}
                       placeholder={placeholder}
-                      disabled={isLocked}
+                      disabled={locked}
                       className="w-full h-10 px-3 rounded-xl border border-input bg-transparent text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   )}

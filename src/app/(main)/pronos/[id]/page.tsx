@@ -259,7 +259,7 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
         <TabsContent value="specials" className="mt-6">
           <SpecialPredictionsForm
             competitionId={prono.competition_id}
-            competitionStatus={competition?.status ?? "upcoming"}
+            isLocked={(matches as Match[] | null)?.some(m => m.status === "live" || m.status === "finished") ?? false}
             userId={user?.id ?? null}
             existing={mySpecials ?? []}
             teams={teams}

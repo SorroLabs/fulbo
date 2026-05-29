@@ -110,7 +110,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
         <TabsContent value="specials" className="mt-6">
           <SpecialPredictionsForm
             competitionId={id}
-            competitionStatus={competition.status}
+            isLocked={(matches as Match[] | null)?.some(m => m.status === "live" || m.status === "finished") ?? false}
             userId={user?.id ?? null}
             existing={specialPreds ?? []}
             teams={teams}

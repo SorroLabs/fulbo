@@ -80,13 +80,15 @@ export async function saveSpecialPrediction({
 }) {
   const supabase = await createClient()
 
-  const { data: competition } = await supabase
-    .from("competitions")
-    .select("status")
-    .eq("id", competitionId)
-    .single()
+  const { data: startedMatch } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("competition_id", competitionId)
+    .in("status", ["live", "finished"])
+    .limit(1)
+    .maybeSingle()
 
-  if (!competition || competition.status !== "upcoming") {
+  if (startedMatch) {
     return { error: "Las predicciones especiales ya no se pueden modificar" }
   }
 

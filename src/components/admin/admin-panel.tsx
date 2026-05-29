@@ -3,13 +3,10 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MatchesAdmin } from "@/components/admin/matches-admin"
 import { SpecialPredictionsAdmin } from "@/components/admin/special-predictions-admin"
-import { Trophy, Calendar, Star, Users, Globe, Lock, ChevronDown, Crown } from "lucide-react"
-import { updateCompetitionStatus } from "@/app/actions/admin"
-import { toast } from "sonner"
+import { Trophy, Calendar, Star, Users, Globe, Lock, Crown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import type { Match, Competition } from "@/types"
@@ -39,27 +36,11 @@ interface Props {
 
 export function AdminPanel({ competitions, allMatches, pronosByCompetition, specialPredictionCounts }: Props) {
   const [selectedId, setSelectedId] = useState(competitions[0]?.id ?? "")
-  const [statuses, setStatuses] = useState<Record<string, string>>(
-    Object.fromEntries(competitions.map(c => [c.id, c.status]))
-  )
-  const [isUpdating, setIsUpdating] = useState(false)
 
   const competition = competitions.find(c => c.id === selectedId)
-  const status = statuses[selectedId] ?? competition?.status ?? "upcoming"
+  const status = competition?.status ?? "upcoming"
   const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]
   const pronos = pronosByCompetition[selectedId] ?? []
-
-  async function handleStatusChange() {
-    if (!statusConfig?.next) return
-    setIsUpdating(true)
-    const res = await updateCompetitionStatus({ competitionId: selectedId, status: statusConfig.next })
-    if (res.error) toast.error(res.error)
-    else {
-      setStatuses(s => ({ ...s, [selectedId]: statusConfig.next! }))
-      toast.success(`Competición actualizada a "${STATUS_CONFIG[statusConfig.next!].label}"`)
-    }
-    setIsUpdating(false)
-  }
 
   if (!competitions.length) {
     return (
@@ -78,7 +59,7 @@ export function AdminPanel({ competitions, allMatches, pronosByCompetition, spec
         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Competición activa</p>
         <div className="flex flex-wrap gap-2">
           {competitions.map(comp => {
-            const s = statuses[comp.id] ?? comp.status
+            const s = comp.status
             const cfg = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]
             return (
               <button
@@ -102,23 +83,6 @@ export function AdminPanel({ competitions, allMatches, pronosByCompetition, spec
           })}
         </div>
 
-        {/* Status change */}
-        {competition && statusConfig?.next && (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
-              Estado actual: <span className="font-semibold text-foreground">{statusConfig.label}</span>
-            </span>
-            <Button
-              size="sm"
-              variant={statusConfig.next === "finished" ? "destructive" : "default"}
-              onClick={handleStatusChange}
-              disabled={isUpdating}
-              className="rounded-full h-8 text-xs font-bold"
-            >
-              {isUpdating ? "Actualizando..." : statusConfig.nextLabel}
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Tabs */}
