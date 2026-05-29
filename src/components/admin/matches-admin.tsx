@@ -4,8 +4,8 @@ import { useState, useTransition } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Trophy, FlaskConical, Trash2, RefreshCw, Bug } from "lucide-react"
-import { reportMatchResult, revertMatchResult, createTestMatch, deleteTestMatches } from "@/app/actions/matches"
+import { Trophy, RefreshCw, Bug } from "lucide-react"
+import { reportMatchResult, revertMatchResult } from "@/app/actions/matches"
 import { syncMatches, testApiFootball } from "@/app/actions/sync"
 import { getTeamFlag } from "@/lib/team-flags"
 import { toast } from "sonner"
@@ -141,8 +141,6 @@ interface Props {
 export function MatchesAdmin({ competitions, allMatches, defaultCompetitionId }: Props) {
   const [selectedId, setSelectedId] = useState(defaultCompetitionId ?? competitions[0]?.id ?? "")
   const [filter, setFilter] = useState<"upcoming" | "finished" | "all">("upcoming")
-  const [isCreating, startCreating] = useTransition()
-  const [isDeleting, startDeleting] = useTransition()
   const [isSyncing, startSyncing] = useTransition()
   const [isTesting, startTesting] = useTransition()
 
@@ -161,14 +159,6 @@ export function MatchesAdmin({ competitions, allMatches, defaultCompetitionId }:
   const upcomingCount = matchesForComp.filter(m => m.status === "upcoming").length
   const finishedCount = matchesForComp.filter(m => m.status === "finished").length
 
-  function handleCreateTest(minutesFromNow: number) {
-    startCreating(async () => {
-      const res = await createTestMatch({ competitionId: selectedId, minutesFromNow })
-      if (res.error) toast.error(res.error)
-      else toast.success(`Partido de prueba en ${minutesFromNow} min creado`)
-    })
-  }
-
   function handleSync() {
     startSyncing(async () => {
       const res = await syncMatches(selectedId)
@@ -185,14 +175,6 @@ export function MatchesAdmin({ competitions, allMatches, defaultCompetitionId }:
     startTesting(async () => {
       const res = await testApiFootball(competition.api_league_id!, parseInt(competition.season))
       toast.info(JSON.stringify(res), { duration: 15000 })
-    })
-  }
-
-  function handleDeleteTests() {
-    startDeleting(async () => {
-      const res = await deleteTestMatches({ competitionId: selectedId })
-      if (res.error) toast.error(res.error)
-      else toast.success("Partidos de prueba eliminados")
     })
   }
 
@@ -256,25 +238,6 @@ export function MatchesAdmin({ competitions, allMatches, defaultCompetitionId }:
         <p className="text-center text-muted-foreground py-10">No hay partidos en esta categoría.</p>
       )}
 
-      {/* Test controls */}
-      <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-xl border border-dashed border-border">
-        <FlaskConical className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span className="text-xs text-muted-foreground font-medium">
-          Test en <span className="text-foreground font-semibold">{competition?.name}</span>:
-        </span>
-        {[25, 5, 1].map(min => (
-          <Button key={min} size="sm" variant="outline" disabled={isCreating}
-            onClick={() => handleCreateTest(min)}
-            className="rounded-full text-xs h-7 px-3">
-            en {min} min
-          </Button>
-        ))}
-        <Button size="sm" variant="outline" disabled={isDeleting}
-          onClick={handleDeleteTests}
-          className="rounded-full text-xs h-7 px-3 text-destructive border-destructive/30 hover:bg-destructive/10 ml-auto">
-          <Trash2 className="h-3 w-3 mr-1" /> Borrar tests
-        </Button>
-      </div>
     </div>
   )
 }
