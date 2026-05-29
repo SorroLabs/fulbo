@@ -158,12 +158,12 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
 
     const matchPreds = predMap.get(match.id)
     const myPredLocked = myPredMap.get(match.id)
-    const tintLocked = match.status === "finished" && myPredLocked && match.home_score != null && match.away_score != null
+    const tintTypeLocked = match.status === "finished" && myPredLocked && match.home_score != null && match.away_score != null
       ? myPredLocked.home_score === match.home_score && myPredLocked.away_score === match.away_score
-        ? "#D4FFB3"
+        ? "exact" as const
         : Math.sign(match.home_score - match.away_score) === Math.sign(myPredLocked.home_score - myPredLocked.away_score)
-          ? "#FFF3B1"
-          : "#FFBEB2"
+          ? "result" as const
+          : "wrong" as const
       : undefined
 
     if (view === "list") {
@@ -171,8 +171,10 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       return (
         <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left">
           <div
-            className="flex items-center gap-3 py-2.5 px-3 rounded-xl border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer"
-            style={tintLocked ? { backgroundColor: tintLocked } : undefined}
+            className={cn(
+              "flex items-center gap-3 py-2.5 px-3 rounded-xl border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer",
+              tintTypeLocked && `match-tint-${tintTypeLocked}`,
+            )}
           >
             <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
               <span className="text-xs text-muted-foreground text-center whitespace-nowrap">{listDateStr}</span>
@@ -205,16 +207,16 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZoneName: "shortOffset",
     })
     const myPred = myPredMap.get(match.id)
-    const tint = match.status === "finished" && myPred && match.home_score != null && match.away_score != null
+    const tintType = match.status === "finished" && myPred && match.home_score != null && match.away_score != null
       ? myPred.home_score === match.home_score && myPred.away_score === match.away_score
-        ? "#D4FFB3"
+        ? "exact" as const
         : Math.sign(match.home_score - match.away_score) === Math.sign(myPred.home_score - myPred.away_score)
-          ? "#FFF3B1"
-          : "#FFBEB2"
+          ? "result" as const
+          : "wrong" as const
       : undefined
     return (
       <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left cursor-pointer hover:scale-[1.01] transition-all rounded-xl">
-        <Card className="border-primary/20 hover:border-primary/40 transition-colors" style={tint ? { backgroundColor: tint } : undefined}>
+        <Card className={cn("border-primary/20 hover:border-primary/40 transition-colors", tintType && `match-tint-${tintType}`)}>
           <CardContent>
             <div className="flex items-center justify-between mb-3 gap-2">
               <span className="text-xs text-muted-foreground min-w-0 truncate">{dateStr}</span>
