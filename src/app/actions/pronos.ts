@@ -60,8 +60,8 @@ export async function joinProno({ pronoId, referrerId }: { pronoId: string; refe
   if (error?.code === "23505") return { error: "Ya sos miembro de este prono" }
   if (error) return { error: "Error al unirse al prono" }
 
-  // Award referral bonus to the member who shared the link
-  if (referrerId && referrerId !== user.id) {
+  // Award referral bonus — owner excluded, only non-owner members
+  if (referrerId && referrerId !== user.id && referrerId !== prono.owner_id) {
     const { data: referrerMembership } = await supabase
       .from("prono_members")
       .select("coins_in_prono")
@@ -72,14 +72,14 @@ export async function joinProno({ pronoId, referrerId }: { pronoId: string; refe
     if (referrerMembership) {
       await supabase
         .from("prono_members")
-        .update({ coins_in_prono: referrerMembership.coins_in_prono + 20 })
+        .update({ coins_in_prono: referrerMembership.coins_in_prono + 10 })
         .eq("prono_id", pronoId)
         .eq("user_id", referrerId)
 
       await supabase.from("coin_transactions").insert({
         user_id: referrerId,
         prono_id: pronoId,
-        amount: 20,
+        amount: 10,
         type: "earn",
         reason: "Invitación aceptada",
       })

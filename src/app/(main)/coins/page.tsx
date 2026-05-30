@@ -47,7 +47,7 @@ const HOW_TO_EARN = [
   { action: "Resultado correcto (1-X-2)", reward: "1 🪙", icon: CheckCircle },
   { action: "Predecir todos los partidos de una fase", reward: "10 🪙", icon: Zap },
   { action: "Mejor predictor de la fecha (1er lugar)", reward: "15 🪙", icon: Trophy },
-  { action: "Alguien se une con tu link de invitación", reward: "20 🪙", icon: UserPlus },
+  { action: "Alguien se une con tu link de invitación", reward: "10 🪙", icon: UserPlus },
 ]
 
 export default function CoinsPage() {
