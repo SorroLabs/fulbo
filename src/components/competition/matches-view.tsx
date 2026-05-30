@@ -66,7 +66,7 @@ export function MatchesView({ matches, predMap, userId }: Props) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {ms.map(m => (
-          <MatchCard key={m.id} match={m} prediction={predMap.get(m.id) ?? null} userId={userId} />
+          <MatchCard key={m.id} match={m} prediction={predMap.get(m.id) ?? null} userId={null} pronoId="" />
         ))}
       </div>
     )
@@ -76,7 +76,7 @@ export function MatchesView({ matches, predMap, userId }: Props) {
     return (
       <div className="flex flex-col gap-2">
         {ms.map(m => (
-          <MatchListRow key={m.id} match={m} prediction={predMap.get(m.id) ?? null} userId={userId} />
+          <MatchListRow key={m.id} match={m} prediction={predMap.get(m.id) ?? null} userId={null} pronoId="" />
         ))}
       </div>
     )

@@ -47,7 +47,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       .order("match_date"),
     memberIds.length > 0
       ? supabase.from("predictions").select("*")
-          .eq("competition_id", prono.competition_id)
+          .eq("prono_id", prono.id)
           .in("user_id", memberIds)
       : { data: [] },
     user

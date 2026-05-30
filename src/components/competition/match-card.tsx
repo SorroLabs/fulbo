@@ -28,12 +28,13 @@ interface MatchCardProps {
   match: Match
   prediction: Prediction | null
   userId: string | null
+  pronoId: string
   eyeIcon?: React.ReactNode
   onPowerUp?: () => void
   lateDeadline?: boolean
 }
 
-export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateDeadline }: MatchCardProps) {
+export function MatchCard({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline }: MatchCardProps) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -49,7 +50,7 @@ export function MatchCard({ match, prediction, userId, eyeIcon, onPowerUp, lateD
     if (!userId || h === "" || a === "") return
     startTransition(async () => {
       const res = await savePrediction({
-        userId, matchId: match.id, competitionId: match.competition_id,
+        userId, matchId: match.id, competitionId: match.competition_id, pronoId,
         homeScore: parseInt(h), awayScore: parseInt(a),
       })
       if (res.error) toast.error(res.error)

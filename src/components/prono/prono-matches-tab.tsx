@@ -334,7 +334,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
         return (
           <MatchCard
             key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
-            userId={userId} eyeIcon={eyeOff} lateDeadline={spy}
+            userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={spy}
             onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
           />
         )
@@ -342,7 +342,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       return (
         <MatchListRow
           key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
-          userId={userId} eyeIcon={eyeOff} lateDeadline={spy}
+          userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={spy}
           onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
         />
       )

@@ -7,18 +7,19 @@ export async function savePrediction({
   userId,
   matchId,
   competitionId,
+  pronoId,
   homeScore,
   awayScore,
 }: {
   userId: string
   matchId: string
   competitionId: string
+  pronoId: string
   homeScore: number
   awayScore: number
 }) {
   const supabase = await createClient()
 
-  // Check deadline: match must still be upcoming and 10+ min away
   const { data: match } = await supabase
     .from("matches")
     .select("status, match_date")
@@ -39,31 +40,13 @@ export async function savePrediction({
     user_id: userId,
     match_id: matchId,
     competition_id: competitionId,
+    prono_id: pronoId,
     home_score: homeScore,
     away_score: awayScore,
     updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id,match_id" })
+  }, { onConflict: "user_id,prono_id,match_id" })
 
   if (error) return { error: "Error al guardar la predicción" }
-
-  // First prediction bonus
-  const { count } = await supabase
-    .from("predictions")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("competition_id", competitionId)
-
-  if (count === 1) {
-    await supabase.from("coin_transactions").insert({
-      user_id: userId,
-      amount: 5,
-      type: "earn",
-      reason: "Primera predicción cargada",
-      competition_id: competitionId,
-    })
-    await supabase.from("profiles").update({ coins: supabase.rpc("increment_coins", { uid: userId, amount: 5 }) }).eq("id", userId)
-  }
-
   return { success: true }
 }
 

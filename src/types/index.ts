@@ -79,6 +79,7 @@ export interface Prediction {
   user_id: string
   match_id: string
   competition_id: string
+  prono_id: string
   home_score: number
   away_score: number
   points_earned: number | null
