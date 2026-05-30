@@ -12,11 +12,13 @@ import { toast } from "sonner"
 interface Props {
   inviteCode: string
   appUrl: string
+  userId?: string
 }
 
-export function PronoInvite({ inviteCode, appUrl }: Props) {
+export function PronoInvite({ inviteCode, appUrl, userId }: Props) {
   const [copied, setCopied] = useState(false)
-  const inviteUrl = `${appUrl.replace(/\/$/, "")}/pronos/${inviteCode}`
+  const base = `${appUrl.replace(/\/$/, "")}/pronos/${inviteCode}`
+  const inviteUrl = userId ? `${base}?ref=${userId}` : base
 
   function copyLink() {
     navigator.clipboard.writeText(inviteUrl)

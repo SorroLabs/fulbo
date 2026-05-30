@@ -11,19 +11,21 @@ interface Props {
   pronoId: string
   inviteCode: string
   isLoggedIn: boolean
+  referrerId?: string
 }
 
-export function PronoJoinButton({ pronoId, inviteCode, isLoggedIn }: Props) {
+export function PronoJoinButton({ pronoId, inviteCode, isLoggedIn, referrerId }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
   function handleJoin() {
     if (!isLoggedIn) {
-      router.push(`/login?next=/pronos/${inviteCode}`)
+      const next = referrerId ? `/pronos/${inviteCode}?ref=${referrerId}` : `/pronos/${inviteCode}`
+      router.push(`/login?next=${encodeURIComponent(next)}`)
       return
     }
     startTransition(async () => {
-      const res = await joinProno({ pronoId })
+      const res = await joinProno({ pronoId, referrerId })
       if (res.error) {
         toast.error(res.error)
       } else {

@@ -37,7 +37,7 @@ export async function createProno({
   return { data }
 }
 
-export async function joinProno({ pronoId }: { pronoId: string }) {
+export async function joinProno({ pronoId, referrerId }: { pronoId: string; referrerId?: string }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "No autenticado" }
@@ -59,6 +59,32 @@ export async function joinProno({ pronoId }: { pronoId: string }) {
 
   if (error?.code === "23505") return { error: "Ya sos miembro de este prono" }
   if (error) return { error: "Error al unirse al prono" }
+
+  // Award referral bonus to the member who shared the link
+  if (referrerId && referrerId !== user.id) {
+    const { data: referrerMembership } = await supabase
+      .from("prono_members")
+      .select("coins_in_prono")
+      .eq("prono_id", pronoId)
+      .eq("user_id", referrerId)
+      .single()
+
+    if (referrerMembership) {
+      await supabase
+        .from("prono_members")
+        .update({ coins_in_prono: referrerMembership.coins_in_prono + 20 })
+        .eq("prono_id", pronoId)
+        .eq("user_id", referrerId)
+
+      await supabase.from("coin_transactions").insert({
+        user_id: referrerId,
+        prono_id: pronoId,
+        amount: 20,
+        type: "earn",
+        reason: "Invitación aceptada",
+      })
+    }
+  }
 
   revalidatePath("/pronos")
   revalidatePath(`/pronos/${pronoId}`)

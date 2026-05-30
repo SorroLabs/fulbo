@@ -17,8 +17,9 @@ import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Match } from "@/types"
 
-export default async function PollaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PollaDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ref?: string }> }) {
   const { id } = await params
+  const { ref: referrerId } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -93,10 +94,10 @@ export default async function PollaDetailPage({ params }: { params: Promise<{ id
             <BarChart3 className="h-4 w-4" /> Estadísticas
           </Link>
           {!isMember && !isOwner && (
-            <PronoJoinButton pronoId={prono.id} inviteCode={prono.invite_code} isLoggedIn={!!user} />
+            <PronoJoinButton pronoId={prono.id} inviteCode={prono.invite_code} isLoggedIn={!!user} referrerId={referrerId} />
           )}
           {(isMember || isOwner) && (
-            <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} />
+            <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} userId={user?.id} />
           )}
           {isOwner && (
             <PronoAdminSheet
