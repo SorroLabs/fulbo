@@ -45,9 +45,20 @@ interface ScenarioProps {
   preds: Map<string, Prediction>
   currentRanking: { user_id: string; total_points: number }[]
   userId: string | null
+  allPowerUps: PowerUpUse[]
 }
 
-function ScenarioCalculator({ match, members, preds, currentRanking, userId }: ScenarioProps) {
+function ScenarioCalculator({ match, members, preds, currentRanking, userId, allPowerUps }: ScenarioProps) {
+  // Build map: userId -> Set<powerUpType> for this match
+  const puByUser = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    for (const pu of allPowerUps) {
+      if (pu.match_id !== match.id) continue
+      if (!map.has(pu.user_id)) map.set(pu.user_id, new Set())
+      map.get(pu.user_id)!.add(pu.type)
+    }
+    return map
+  }, [allPowerUps, match.id])
   const [scenHome, setScenHome] = useState("")
   const [scenAway, setScenAway] = useState("")
 
@@ -60,9 +71,16 @@ function ScenarioCalculator({ match, members, preds, currentRanking, userId }: S
     return currentRanking
       .map((m, i) => {
         const pred = preds.get(m.user_id)
-        const gained = pred?.home_score != null && pred?.away_score != null
+        const userPus = puByUser.get(m.user_id) ?? new Set()
+        let gained = pred?.home_score != null && pred?.away_score != null
           ? calcScenarioPts(pred.home_score, pred.away_score, h, a, match.phase)
           : 0
+        // Apply double_points
+        if (userPus.has("double_points") && gained > 0) gained *= 2
+        // Apply wildcard: if 0 pts, grant base resultado points
+        if (userPus.has("wildcard") && gained === 0 && pred != null) {
+          gained = 5 * (match.phase === "groups" ? 1 : 2)
+        }
         return { ...m, gained, projected: m.total_points + gained, currentRank: i + 1 }
       })
       .sort((a, b) => b.projected - a.projected)
@@ -569,6 +587,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                   preds={selectedPreds ?? new Map()}
                   currentRanking={currentRanking}
                   userId={userId}
+                  allPowerUps={myPowerUps}
                 />
               )}
 
