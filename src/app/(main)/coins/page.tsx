@@ -44,7 +44,7 @@ const POWER_UPS = [
 const HOW_TO_EARN = [
   { action: "Unirse a un prono", reward: "100 🪙", icon: Trophy },
   { action: "Marcador exacto", reward: "3 🪙", icon: Star },
-  { action: "Resultado correcto (1-X-2)", reward: "1 🪙", icon: CheckCircle },
+  { action: "Resultado correcto (ganador o empate)", reward: "1 🪙", icon: CheckCircle },
   { action: "Predecir todos los partidos de una fase", reward: "10 🪙", icon: Zap },
   { action: "Mejor predictor de la fecha (1er lugar)", reward: "15 🪙", icon: Trophy },
   { action: "Alguien se une con tu link de invitación", reward: "10 🪙", icon: UserPlus },

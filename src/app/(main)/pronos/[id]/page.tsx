@@ -195,23 +195,19 @@ export default async function PollaDetailPage({ params, searchParams }: { params
                 const predByMatch = new Map(memberPreds.map((p: any) => [p.match_id, p]))
 
                 let exactos = 0
-                let resultados = 0
                 let jugados = 0
+                let maxPts = 0
 
                 for (const m of finishedMatches) {
                   const pred = predByMatch.get(m.id)
                   if (!pred) continue
                   jugados++
+                  maxPts += m.phase === "groups" ? 10 : 20
                   if (pred.home_score === m.home_score && pred.away_score === m.away_score) {
                     exactos++
-                  } else {
-                    const predResult = pred.home_score > pred.away_score ? 1 : pred.home_score < pred.away_score ? -1 : 0
-                    const realResult = m.home_score > m.away_score ? 1 : m.home_score < m.away_score ? -1 : 0
-                    if (predResult === realResult) resultados++
                   }
                 }
 
-                const maxPts = jugados * (prono.points_exact ?? 3)
                 const efectividad = maxPts > 0 ? Math.round((member.total_points / maxPts) * 100) : null
 
                 return (

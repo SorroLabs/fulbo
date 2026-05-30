@@ -7,35 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Globe, Lock, Zap, ZapOff, Info, X, ChevronDown, ChevronUp } from "lucide-react"
+import { Globe, Lock, Zap, ZapOff, Info, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createProno } from "@/app/actions/pronos"
 import { toast } from "sonner"
 
 interface Props {
   competitions: { id: string; name: string; season: string; status: string }[]
-}
-
-function Stepper({ value, onChange, min, max }: { value: number; onChange: (v: number) => void; min: number; max: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => onChange(Math.max(min, value - 1))}
-        className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors"
-      >
-        <ChevronDown className="h-4 w-4" />
-      </button>
-      <span className="w-6 text-center font-bold text-sm">{value}</span>
-      <button
-        type="button"
-        onClick={() => onChange(Math.min(max, value + 1))}
-        className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors"
-      >
-        <ChevronUp className="h-4 w-4" />
-      </button>
-    </div>
-  )
 }
 
 export function CreatePronoForm({ competitions }: Props) {
@@ -45,20 +23,14 @@ export function CreatePronoForm({ competitions }: Props) {
   const [competitionId, setCompetitionId] = useState(competitions[0]?.id ?? "")
   const [isPublic, setIsPublic] = useState(true)
   const [powerUpsEnabled, setPowerUpsEnabled] = useState(true)
-  const [pointsExact, setPointsExact] = useState(3)
-  const [pointsResult, setPointsResult] = useState(1)
   const [isPending, startTransition] = useTransition()
   const [showPowerUpInfo, setShowPowerUpInfo] = useState(false)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim() || !competitionId) return
-    if (pointsExact <= pointsResult) {
-      toast.error("Los puntos por exacto deben ser mayores que por resultado")
-      return
-    }
     startTransition(async () => {
-      const res = await createProno({ competitionId, name, description, isPublic, powerUpsEnabled, pointsExact, pointsResult })
+      const res = await createProno({ competitionId, name, description, isPublic, powerUpsEnabled })
       if (res.error) toast.error(res.error)
       else {
         toast.success("¡Prono creado!")
@@ -106,32 +78,6 @@ export function CreatePronoForm({ competitions }: Props) {
                 <option key={c.id} value={c.id}>{c.name} — {c.season}</option>
               ))}
             </select>
-          </div>
-
-          <Separator />
-
-          {/* Points config */}
-          <div className="space-y-3">
-            <Label>Puntuación</Label>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Marcador exacto</p>
-                  <p className="text-xs text-muted-foreground">Puntos por adivinar el marcador exacto</p>
-                </div>
-                <Stepper value={pointsExact} onChange={setPointsExact} min={2} max={10} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Resultado correcto</p>
-                  <p className="text-xs text-muted-foreground">Puntos por acertar ganador o empate</p>
-                </div>
-                <Stepper value={pointsResult} onChange={v => setPointsResult(Math.min(v, pointsExact - 1))} min={1} max={9} />
-              </div>
-            </div>
-            {pointsExact <= pointsResult && (
-              <p className="text-xs text-red-500">El exacto debe valer más que el resultado</p>
-            )}
           </div>
 
           <Separator />
@@ -217,7 +163,7 @@ export function CreatePronoForm({ competitions }: Props) {
 
       <Button
         type="submit"
-        disabled={isPending || !name.trim() || !competitionId || pointsExact <= pointsResult}
+        disabled={isPending || !name.trim() || !competitionId}
         className="w-full h-12 rounded-xl text-base font-bold"
       >
         {isPending ? "Creando..." : "Crear prono"}
