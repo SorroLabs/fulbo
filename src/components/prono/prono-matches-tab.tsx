@@ -561,13 +561,16 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                   </div>
                 </DialogTitle>
               </DialogHeader>
-              <ScenarioCalculator
-                match={selected}
-                members={members}
-                preds={selectedPreds ?? new Map()}
-                currentRanking={currentRanking}
-                userId={userId}
-              />
+              {(selected.status === "live" ||
+                (selected.status !== "finished" && new Date() >= new Date(selected.match_date))) && (
+                <ScenarioCalculator
+                  match={selected}
+                  members={members}
+                  preds={selectedPreds ?? new Map()}
+                  currentRanking={currentRanking}
+                  userId={userId}
+                />
+              )}
 
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide pt-2 pb-1">Predicciones</p>
               <div className="divide-y divide-border/50">
