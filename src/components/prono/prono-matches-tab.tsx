@@ -680,27 +680,28 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                         <AvatarImage src={member.profiles?.avatar_url ?? undefined} />
                         <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
                       </Avatar>
-                      <span className="flex-1 text-sm font-medium truncate">
+                      <span className="flex-1 text-sm font-medium truncate flex items-center gap-1">
                         {displayName}{isMe && " (vos)"}
+                        {pred && pred.points_earned !== null && (() => {
+                          const basePts = selected?.status === "finished" && selected.home_score != null && selected.away_score != null
+                            ? calcScenarioPts(pred.home_score, pred.away_score, selected.home_score, selected.away_score, selected.phase)
+                            : pred.points_earned
+                          return basePts === 0 && pred.points_earned > 0
+                            ? <Shield className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            : null
+                        })()}
                       </span>
                       {pred ? (
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="font-black text-base">{pred.home_score} - {pred.away_score}</span>
-                          {pred.points_earned !== null && (() => {
-                            const basePts = selected?.status === "finished" && selected.home_score != null && selected.away_score != null
-                              ? calcScenarioPts(pred.home_score, pred.away_score, selected.home_score, selected.away_score, selected.phase)
-                              : pred.points_earned
-                            const fromWildcard = basePts === 0 && pred.points_earned > 0
-                            return (
-                              <span className={cn(
-                                "flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full",
-                                pred.points_earned > 0 ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                              )}>
-                                {fromWildcard && <Shield className="h-3 w-3" />}
-                                +{pred.points_earned}
-                              </span>
-                            )
-                          })()}
+                          {pred.points_earned !== null && (
+                            <span className={cn(
+                              "text-xs font-bold px-1.5 py-0.5 rounded-full",
+                              pred.points_earned > 0 ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                            )}>
+                              +{pred.points_earned}
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground shrink-0">Sin predicción</span>
