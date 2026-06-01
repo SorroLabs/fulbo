@@ -55,7 +55,7 @@ export function Navbar({ profile }: NavbarProps) {
         <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
           <span className="text-xl font-black tracking-tight">
             <span className="text-primary">fulbo</span>
-            <span className="text-muted-foreground">.co</span>
+            <span className="text-muted-foreground">.io</span>
           </span>
         </Link>
 
