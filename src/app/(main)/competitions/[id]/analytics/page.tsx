@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Target, CheckCircle, XCircle, TrendingUp } from "lucide-react"
+import { Target, CheckCircle, XCircle, TrendingUp, ArrowLeft } from "lucide-react"
 import { UserAnalyticsChart } from "@/components/rankings/user-analytics-chart"
+import Link from "next/link"
 
 export default async function AnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -14,7 +15,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
     supabase.from("competitions").select("*").eq("id", id).single(),
     supabase
       .from("predictions")
-      .select("*, matches(home_team, away_team, phase, match_date)")
+      .select("*, matches(home_team, away_team, phase, match_date, home_score, away_score)")
       .eq("user_id", user.id)
       .eq("competition_id", id)
       .not("points_earned", "is", null),
@@ -31,12 +32,16 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
   if (!competition) notFound()
 
   const total = predictions?.length ?? 0
-  const exact = predictions?.filter(p => {
-    const pts = p.points_earned ?? 0
-    return [3, 5, 6, 8, 10, 16].includes(pts)
+  const exact = predictions?.filter(p =>
+    p.home_score === p.matches?.home_score && p.away_score === p.matches?.away_score
+  ).length ?? 0
+  const correct = predictions?.filter(p => {
+    if (p.home_score === p.matches?.home_score && p.away_score === p.matches?.away_score) return false
+    const predSign = Math.sign(p.home_score - p.away_score)
+    const realSign = Math.sign((p.matches?.home_score ?? 0) - (p.matches?.away_score ?? 0))
+    return predSign === realSign && (p.points_earned ?? 0) > 0
   }).length ?? 0
-  const correct = predictions?.filter(p => [1, 2, 3].includes(p.points_earned ?? 0)).length ?? 0
-  const wrong = predictions?.filter(p => p.points_earned === 0).length ?? 0
+  const wrong = predictions?.filter(p => (p.points_earned ?? 0) === 0).length ?? 0
   const totalPts = predictions?.reduce((acc, p) => acc + (p.points_earned ?? 0), 0) ?? 0
   const accuracy = total > 0 ? Math.round(((exact + correct) / total) * 100) : 0
 
@@ -44,10 +49,14 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
     const phase = p.matches?.phase ?? "unknown"
     if (!acc[phase]) acc[phase] = { exact: 0, correct: 0, wrong: 0, total: 0 }
     acc[phase].total++
-    const pts = p.points_earned ?? 0
-    if ([3, 5, 6, 8, 10, 16].includes(pts)) acc[phase].exact++
-    else if ([1, 2, 3].includes(pts)) acc[phase].correct++
-    else acc[phase].wrong++
+    const isExact = p.home_score === p.matches?.home_score && p.away_score === p.matches?.away_score
+    if (isExact) {
+      acc[phase].exact++
+    } else if ((p.points_earned ?? 0) > 0) {
+      acc[phase].correct++
+    } else {
+      acc[phase].wrong++
+    }
     return acc
   }, {})
 
@@ -59,6 +68,10 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
   return (
     <div className="space-y-8">
       <div>
+        <Link href={`/competitions/${id}/rankings`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-3">
+          <ArrowLeft className="h-4 w-4" />
+          Ranking global
+        </Link>
         <h1 className="text-3xl font-black mb-1">Mis analytics</h1>
         <p className="text-muted-foreground">{competition.name} · {competition.season}</p>
       </div>
