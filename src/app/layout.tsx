@@ -11,10 +11,26 @@ const outfit = Outfit({
   weight: ["300", "400", "500", "600", "700", "800", "900"],
 })
 
+const BASE_URL = "https://fulbo.io"
+
 export const metadata: Metadata = {
   title: "fulbo.io — Predicciones de fútbol",
   description: "La forma más divertida de vivir los torneos de fútbol. Crea tu prono, invita a tus amigos y compite en rankings globales.",
   manifest: "/manifest.json",
+  metadataBase: new URL(BASE_URL),
+  openGraph: {
+    title: "fulbo.io — Predicciones de fútbol",
+    description: "Predice los resultados del Mundial 2026, compite con tus amigos y sube al ranking global.",
+    url: BASE_URL,
+    siteName: "fulbo.io",
+    type: "website",
+    locale: "es_419",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "fulbo.io — Predicciones de fútbol",
+    description: "Predice los resultados del Mundial 2026, compite con tus amigos y sube al ranking global.",
+  },
 }
 
 export const viewport: Viewport = {
