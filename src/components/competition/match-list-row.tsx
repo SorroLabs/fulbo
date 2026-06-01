@@ -5,7 +5,7 @@ import type React from "react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getTeamFlag } from "@/lib/team-flags"
-import { savePrediction } from "@/app/actions/predictions"
+import { savePrediction, deletePrediction } from "@/app/actions/predictions"
 import { Check, Loader2, Zap } from "lucide-react"
 import { toast } from "sonner"
 import type { Match, Prediction } from "@/types"
@@ -25,9 +25,10 @@ interface Props {
   onPowerUp?: () => void
   lateDeadline?: boolean
   onSave?: (matchId: string, home: number, away: number) => void
+  onDelete?: (matchId: string) => void
 }
 
-export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave }: Props) {
+export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave, onDelete }: Props) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -53,8 +54,21 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
     })
   }
 
+  const handleDelete = () => {
+    if (!userId) return
+    startTransition(async () => {
+      const res = await deletePrediction({ userId, matchId: match.id, pronoId })
+      if (res.error) toast.error(res.error)
+      else {
+        setSaved(false)
+        onDelete?.(match.id)
+      }
+    })
+  }
+
   const handleBlur = () => {
     if (home !== "" && away !== "") handleSave(home, away)
+    else if (home === "" && away === "" && saved) handleDelete()
   }
 
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const

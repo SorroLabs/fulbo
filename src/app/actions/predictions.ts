@@ -50,6 +50,42 @@ export async function savePrediction({
   return { success: true }
 }
 
+export async function deletePrediction({
+  userId,
+  matchId,
+  pronoId,
+}: {
+  userId: string
+  matchId: string
+  pronoId: string
+}) {
+  const supabase = await createClient()
+
+  const { data: match } = await supabase
+    .from("matches")
+    .select("status, match_date")
+    .eq("id", matchId)
+    .single()
+
+  if (!match || match.status !== "upcoming") {
+    return { error: "No se puede modificar este partido" }
+  }
+
+  const deadline = new Date(match.match_date)
+  deadline.setMinutes(deadline.getMinutes() - 10)
+  if (new Date() > deadline) {
+    return { error: "El plazo para predecir este partido ya cerró" }
+  }
+
+  await supabase.from("predictions")
+    .delete()
+    .eq("user_id", userId)
+    .eq("match_id", matchId)
+    .eq("prono_id", pronoId)
+
+  return { success: true }
+}
+
 export async function saveSpecialPrediction({
   userId,
   competitionId,
