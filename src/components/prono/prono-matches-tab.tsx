@@ -276,6 +276,14 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
 
   const hasSpy = (matchId: string) => myPowerUpsByMatch.get(matchId)?.has("spy") ?? false
 
+  const spyTargetsByMatch = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const pu of myPowerUps) {
+      if (pu.type === "spy" && pu.target_user_id) map.set(pu.match_id, pu.target_user_id)
+    }
+    return map
+  }, [myPowerUps])
+
   // Prediction maps
   const predMap = useMemo(() => {
     const map = new Map<string, Map<string, Prediction>>()
@@ -362,6 +370,13 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     const locked = isLocked(match, spy)
     const canUsePowerUps = !!pronoId && !!userId && powerUpsEnabled && match.status === "upcoming"
 
+    const spyTargetId = spyTargetsByMatch.get(match.id)
+    const spyPrediction = spyTargetId ? (predMap.get(match.id)?.get(spyTargetId) ?? null) : null
+    const spyTargetMember = spyTargetId ? members.find(m => m.user_id === spyTargetId) : null
+    const spyTargetName = spyTargetMember?.profiles?.nickname
+      ? `@${spyTargetMember.profiles.nickname}`
+      : (spyTargetMember?.profiles?.full_name ?? null)
+
     if (!locked) {
       const eyeOff = (
         <span title="Predicciones visibles 20 minutos antes de iniciar">
@@ -375,6 +390,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
             userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={spy}
             onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
             onSave={handlePredSaved} onDelete={handlePredDeleted}
+            spyPrediction={spyPrediction} spyTargetName={spyTargetName}
           />
         )
       }
@@ -384,6 +400,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
           userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={spy}
           onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
           onSave={handlePredSaved} onDelete={handlePredDeleted}
+          spyPrediction={spyPrediction} spyTargetName={spyTargetName}
         />
       )
     }

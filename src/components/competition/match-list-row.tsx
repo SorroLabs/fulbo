@@ -26,9 +26,11 @@ interface Props {
   lateDeadline?: boolean
   onSave?: (matchId: string, home: number, away: number) => void
   onDelete?: (matchId: string) => void
+  spyPrediction?: { home_score: number; away_score: number } | null
+  spyTargetName?: string | null
 }
 
-export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave, onDelete }: Props) {
+export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave, onDelete, spyPrediction, spyTargetName }: Props) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -174,6 +176,20 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
         </Badge>
         {eyeIcon}
       </div>
+      {/* Spy reveal */}
+      {spyPrediction && (
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs shrink-0">
+          <span>🕵️</span>
+          <span className="text-amber-600 dark:text-amber-400 font-medium truncate max-w-[80px]">{spyTargetName ?? "Rival"}</span>
+          <span className="font-black text-amber-600 dark:text-amber-400">{spyPrediction.home_score}-{spyPrediction.away_score}</span>
+        </div>
+      )}
+      {spyPrediction === null && spyTargetName && (
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs shrink-0">
+          <span>🕵️</span>
+          <span className="text-amber-600 dark:text-amber-400 italic">sin pronóstico</span>
+        </div>
+      )}
     </div>
   )
 }
