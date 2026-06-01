@@ -114,13 +114,18 @@ export async function activatePowerUp({
     if (!target) return { error: "El rival elegido no es miembro de este prono" }
   }
 
-  // Deduct coins
-  const { error: deductError } = await supabase
-    .from("prono_members")
-    .update({ coins_in_prono: member.coins_in_prono - cost })
-    .eq("id", member.id)
+  // Deduct coins + log transaction via SECURITY DEFINER RPC (bypasses RLS on prono_members)
+  const { data: remaining, error: spendError } = await supabase.rpc("spend_coins_for_powerup", {
+    p_user_id: user.id,
+    p_prono_id: pronoId,
+    p_match_id: matchId,
+    p_type: type,
+    p_amount: cost,
+    p_competition_id: match.competition_id,
+  })
 
-  if (deductError) return { error: "Error al descontar monedas" }
+  if (spendError) return { error: "Error al descontar monedas" }
+  if (remaining === -1) return { error: "No tienes suficientes monedas" }
 
   // Insert power-up use
   const { error: insertError } = await supabase
@@ -136,26 +141,19 @@ export async function activatePowerUp({
 
   if (insertError) {
     // Rollback coin deduction
-    await supabase
-      .from("prono_members")
-      .update({ coins_in_prono: member.coins_in_prono })
-      .eq("id", member.id)
+    await supabase.rpc("spend_coins_for_powerup", {
+      p_user_id: user.id,
+      p_prono_id: pronoId,
+      p_match_id: matchId,
+      p_type: type,
+      p_amount: -cost,
+      p_competition_id: match.competition_id,
+    })
     return { error: "Error al activar power-up" }
   }
 
-  // Log transaction
-  await supabase.from("coin_transactions").insert({
-    user_id: user.id,
-    amount: cost,
-    type: "spend",
-    reason: `Power-up: ${type}`,
-    competition_id: match.competition_id,
-    match_id: matchId,
-    prono_id: pronoId,
-  })
-
   revalidatePath(`/pronos/${pronoId}`)
-  return { success: true, coinsRemaining: member.coins_in_prono - cost }
+  return { success: true, coinsRemaining: remaining }
 }
 
 export async function getMyPowerUps({
