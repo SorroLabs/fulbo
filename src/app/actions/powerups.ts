@@ -48,17 +48,16 @@ export async function activatePowerUp({
   if (!match) return { error: "Partido no encontrado" }
   if (match.status !== "upcoming") return { error: "El partido ya comenzó" }
 
-  // Deadline check: late_change can be bought up to 2 min before, others up to 20 min before
+  // late_change / spy: must be bought at least 2 min before kick-off (user needs time to act on them)
+  // wildcard / double_points: can be bought up to the exact kick-off time
   const matchTime = new Date(match.match_date)
-  const normalDeadline = new Date(matchTime.getTime() - 20 * 60 * 1000)
   const lateDeadline = new Date(matchTime.getTime() - 2 * 60 * 1000)
   const now = new Date()
 
-  // spy implicitly includes late edit, so its purchase window is also 2 min before
   if (type === "late_change" || type === "spy") {
     if (now > lateDeadline) return { error: "Ya pasó el plazo para este power-up" }
   } else {
-    if (now > normalDeadline) return { error: "Ya cerró el plazo para activar power-ups en este partido" }
+    if (now >= matchTime) return { error: "Ya cerró el plazo para activar power-ups en este partido" }
   }
 
   // Get effective cost (prono config overrides default)

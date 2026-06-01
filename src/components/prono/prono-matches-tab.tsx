@@ -10,7 +10,7 @@ import { MatchCard } from "@/components/competition/match-card"
 import { MatchListRow } from "@/components/competition/match-list-row"
 import { MatchFilterBar } from "@/components/competition/match-filter-bar"
 import { PowerUpModal } from "@/components/prono/power-up-modal"
-import { Eye, EyeOff, LayoutGrid, List, TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { Eye, EyeOff, LayoutGrid, List, TrendingUp, TrendingDown, Minus, Zap } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
 import {
@@ -421,36 +421,41 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     if (view === "list") {
       const listDateStr = new Date(match.match_date).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
       return (
-        <button key={match.id} onClick={() => setSelected(match)} className="w-full text-left">
-          <div
-            className={cn(
-              "flex items-center gap-3 py-2.5 px-3 rounded-xl border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer",
-              tintTypeLocked && `match-tint-${tintTypeLocked}`,
-            )}
-          >
-            <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
-              <span className="text-xs text-muted-foreground text-center whitespace-nowrap">{listDateStr}</span>
-              {match.group_name && <span className="text-xs text-muted-foreground/60">{match.group_name}</span>}
-            </div>
-            <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-              <span className="text-sm font-semibold truncate text-right">{match.home_team}</span>
-              <TeamFlag name={match.home_team} />
-            </div>
-            <div className="shrink-0 w-20 flex items-center justify-center">
-              <span className="font-black text-lg text-center">
-                {match.status === "finished" ? `${match.home_score} - ${match.away_score}` : "vs"}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <TeamFlag name={match.away_team} />
-              <span className="text-sm font-semibold truncate">{match.away_team}</span>
-            </div>
-            <div className="shrink-0 w-16 sm:w-28 flex items-center justify-end gap-1.5">
-              <span className="text-xs text-muted-foreground">{matchPreds?.size ?? 0}/{members.length}</span>
-              <Eye className="h-4 w-4 text-primary" />
-            </div>
+        <div key={match.id}
+          className={cn(
+            "flex items-center gap-3 py-2.5 px-3 rounded-xl border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer",
+            tintTypeLocked && `match-tint-${tintTypeLocked}`,
+          )}
+          onClick={() => setSelected(match)}
+        >
+          <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
+            <span className="text-xs text-muted-foreground text-center whitespace-nowrap">{listDateStr}</span>
+            {match.group_name && <span className="text-xs text-muted-foreground/60">{match.group_name}</span>}
           </div>
-        </button>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+            <span className="text-sm font-semibold truncate text-right">{match.home_team}</span>
+            <TeamFlag name={match.home_team} />
+          </div>
+          <div className="shrink-0 w-20 flex items-center justify-center">
+            <span className="font-black text-lg text-center">
+              {match.status === "finished" ? `${match.home_score} - ${match.away_score}` : "vs"}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <TeamFlag name={match.away_team} />
+            <span className="text-sm font-semibold truncate">{match.away_team}</span>
+          </div>
+          <div className="shrink-0 w-16 sm:w-28 flex items-center justify-end gap-1.5">
+            {canUsePowerUps && (
+              <button onClick={e => { e.stopPropagation(); setPowerUpMatch(match) }}
+                className="text-primary/60 hover:text-primary transition-colors" title="Power-ups">
+                <Zap className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <span className="text-xs text-muted-foreground">{matchPreds?.size ?? 0}/{members.length}</span>
+            <Eye className="h-4 w-4 text-primary" />
+          </div>
+        </div>
       )
     }
 
@@ -508,9 +513,17 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
               <div className="w-32 shrink-0" />
               <div className="flex-1 flex items-center justify-center text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</div>
             </div>
-            <div className="mt-3 flex items-center justify-center" style={{ minHeight: 36 }}>
+            <div className="mt-3 flex items-center justify-between" style={{ minHeight: 36 }}>
+              {canUsePowerUps ? (
+                <button
+                  onClick={e => { e.stopPropagation(); setPowerUpMatch(match) }}
+                  className="flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors font-medium"
+                >
+                  <Zap className="h-3.5 w-3.5" /> Power-ups
+                </button>
+              ) : <span />}
               <span className="text-xs text-primary/70">
-                {matchPreds?.size ?? 0} de {members.length} predicciones · tap para ver
+                {matchPreds?.size ?? 0}/{members.length} · tap para ver
               </span>
             </div>
           </CardContent>
