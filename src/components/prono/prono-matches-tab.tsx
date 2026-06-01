@@ -311,7 +311,9 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
               home_score: override.home,
               away_score: override.away,
               points_earned: null,
+              is_locked: false,
               created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             })
           }
         }
