@@ -232,12 +232,15 @@ export default async function PollaDetailPage({ params, searchParams }: { params
                       <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold truncate text-sm ${isMe ? "text-primary" : ""}`}>
+                      <p className={`font-semibold leading-tight truncate text-sm ${isMe ? "text-primary" : ""}`}>
                         {member.profiles?.full_name ?? "Usuario"} {isMe && <span className="font-normal opacity-60">(tú)</span>}
                         {member.user_id === prono.owner_id && (
                           <Crown className="h-3 w-3 text-primary inline ml-1 mb-0.5" />
                         )}
                       </p>
+                      {member.profiles?.nickname && (
+                        <p className="text-xs text-muted-foreground leading-tight truncate">@{member.profiles.nickname}</p>
+                      )}
                       <p className="text-xs text-muted-foreground sm:hidden">
                         {exactos > 0 && <span className="text-primary font-semibold">{exactos} exactos</span>}
                         {exactos > 0 && efectividad !== null && " · "}

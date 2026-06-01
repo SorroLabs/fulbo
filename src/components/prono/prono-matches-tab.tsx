@@ -687,7 +687,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                             ? calcScenarioPts(pred.home_score, pred.away_score, selected.home_score, selected.away_score, selected.phase)
                             : pred.points_earned
                           return basePts === 0 && pred.points_earned > 0
-                            ? <Shield className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            ? <Shield className="h-3 w-3 shrink-0 text-emerald-500" />
                             : null
                         })()}
                       </span>
