@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Trophy, RefreshCw, Bug } from "lucide-react"
+import { RefreshCw, Bug, Trash2 } from "lucide-react"
 import { reportMatchResult, revertMatchResult } from "@/app/actions/matches"
 import { syncMatches, testApiFootball } from "@/app/actions/sync"
 import { getTeamFlag } from "@/lib/team-flags"
@@ -22,7 +22,15 @@ const PHASE_LABELS: Record<string, string> = {
 }
 const PHASE_ORDER = ["groups", "round_of_32", "round_of_16", "quarterfinals", "semifinals", "third_place", "final"]
 
-function MatchRow({ match }: { match: Match }) {
+function MatchRow({
+  match,
+  onSaved,
+  onReverted,
+}: {
+  match: Match
+  onSaved: (matchId: string, home: number, away: number) => void
+  onReverted: (matchId: string) => void
+}) {
   const [home, setHome] = useState(match.home_score?.toString() ?? "")
   const [away, setAway] = useState(match.away_score?.toString() ?? "")
   const [editing, setEditing] = useState(false)
@@ -40,6 +48,7 @@ function MatchRow({ match }: { match: Match }) {
       if (res.error) toast.error(res.error)
       else {
         toast.success(`${match.home_team} ${home}-${away} ${match.away_team}`)
+        onSaved(match.id, parseInt(home), parseInt(away))
         setEditing(false)
       }
     })
@@ -51,6 +60,7 @@ function MatchRow({ match }: { match: Match }) {
       if (res.error) toast.error(res.error)
       else {
         toast.success("Resultado revertido — partido vuelve a Próximo")
+        onReverted(match.id)
         setHome("")
         setAway("")
         setEditing(false)
@@ -84,7 +94,7 @@ function MatchRow({ match }: { match: Match }) {
       </div>
 
       {showInputs ? (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <input type="number" min={0} max={20} value={home}
             onChange={e => setHome(e.target.value)}
             placeholder="0"
@@ -110,9 +120,9 @@ function MatchRow({ match }: { match: Match }) {
               </Button>
               <Button size="sm" variant="ghost" onClick={handleRevert}
                 disabled={isPending || isReverting}
-                className="h-8 px-2 text-xs rounded-full text-destructive hover:bg-destructive/10"
-                title="Revertir a sin jugar">
-                {isReverting ? "..." : "— x —"}
+                className="h-8 px-2 text-xs rounded-full text-destructive hover:bg-destructive/10 gap-1">
+                <Trash2 className="h-3.5 w-3.5" />
+                {isReverting ? "..." : "Borrar"}
               </Button>
             </>
           )}
@@ -139,6 +149,7 @@ interface Props {
 }
 
 export function MatchesAdmin({ competitions, allMatches, defaultCompetitionId }: Props) {
+  const [matches, setMatches] = useState(allMatches)
   const [selectedId, setSelectedId] = useState(defaultCompetitionId ?? competitions[0]?.id ?? "")
   const [filter, setFilter] = useState<"upcoming" | "finished" | "all">("upcoming")
   const [isSyncing, startSyncing] = useTransition()
@@ -146,7 +157,19 @@ export function MatchesAdmin({ competitions, allMatches, defaultCompetitionId }:
 
   const competition = competitions.find(c => c.id === selectedId)
 
-  const matchesForComp = allMatches.filter(m => m.competition_id === selectedId)
+  function handleMatchSaved(matchId: string, home: number, away: number) {
+    setMatches(prev => prev.map(m => m.id === matchId
+      ? { ...m, status: "finished" as const, home_score: home, away_score: away }
+      : m))
+  }
+
+  function handleMatchReverted(matchId: string) {
+    setMatches(prev => prev.map(m => m.id === matchId
+      ? { ...m, status: "upcoming" as const, home_score: null, away_score: null }
+      : m))
+  }
+
+  const matchesForComp = matches.filter(m => m.competition_id === selectedId)
   const filtered = matchesForComp.filter(m =>
     filter === "all" ? true : m.status === filter
   )
@@ -228,7 +251,14 @@ export function MatchesAdmin({ competitions, allMatches, defaultCompetitionId }:
           </h3>
           <Card>
             <CardContent className="pt-2 pb-2">
-              {phaseMatches.map(m => <MatchRow key={m.id} match={m} />)}
+              {phaseMatches.map(m => (
+                <MatchRow
+                  key={m.id}
+                  match={m}
+                  onSaved={handleMatchSaved}
+                  onReverted={handleMatchReverted}
+                />
+              ))}
             </CardContent>
           </Card>
         </div>
