@@ -97,7 +97,7 @@ export function ProfileForm({ profile, isSetup }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {isSetup && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 text-sm text-primary font-medium">
-          Antes de continuar, elegí un nickname para tu perfil.
+          Antes de continuar, elige un nickname para tu perfil.
         </div>
       )}
 

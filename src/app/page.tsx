@@ -5,10 +5,10 @@ import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { Trophy, Users, BarChart3, Coins, Zap, Globe } from "lucide-react"
 
 const FEATURES = [
-  { icon: Trophy, title: "Predicciones en tiempo real", desc: "Cargá tus marcadores antes de cada partido y seguí los resultados en vivo." },
-  { icon: Users, title: "Pronos públicos y privados", desc: "Creá grupos con amigos o unite a pronos públicos de cualquier parte del mundo." },
-  { icon: BarChart3, title: "Rankings globales", desc: "Competí en tu prono y también en el ranking global de la competición." },
-  { icon: Coins, title: "Sistema de monedas", desc: "Ganá monedas por cada acierto y usálas en power-ups y duelos." },
+  { icon: Trophy, title: "Predicciones en tiempo real", desc: "Carga tus marcadores antes de cada partido y sigue los resultados en vivo." },
+  { icon: Users, title: "Pronos públicos y privados", desc: "Crea grupos con amigos o únete a pronos públicos de cualquier parte del mundo." },
+  { icon: BarChart3, title: "Rankings globales", desc: "Compite en tu prono y también en el ranking global de la competición." },
+  { icon: Coins, title: "Sistema de monedas", desc: "Gana monedas por cada acierto y úsalas en power-ups y duelos." },
   { icon: Zap, title: "Power-ups estratégicos", desc: "Doble puntos, cambio tardío, espía y comodín para darle más emoción." },
   { icon: Globe, title: "Múltiples competiciones", desc: "Mundial, Champions League, Copa América y más torneos en una sola plataforma." },
 ]
@@ -20,7 +20,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <span className="text-xl font-black">
             <span className="text-primary">fulbo</span>
-            <span className="text-muted-foreground">.co</span>
+            <span className="text-muted-foreground">.io</span>
           </span>
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -38,12 +38,12 @@ export default function LandingPage() {
             ⚽ Mundial 2026 — ¡Ya disponible!
           </div>
           <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6 leading-none">
-            Predecí.<br />
-            <span className="text-primary">Competí.</span><br />
-            Ganá.
+            Predice.<br />
+            <span className="text-primary">Compite.</span><br />
+            Gana.
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-10">
-            La forma más divertida de vivir los torneos de fútbol. Creá tu prono, invitá a tus amigos y demostrá que sabés más de fútbol que todos.
+            La forma más divertida de vivir los torneos de fútbol. Crea tu prono, invita a tus amigos y demuestra que sabes más de fútbol que todos.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/login" className={cn(buttonVariants({ size: "lg" }), "rounded-full h-14 px-8 text-base font-bold")}>
@@ -57,7 +57,7 @@ export default function LandingPage() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 py-20 w-full">
-        <h2 className="text-3xl font-black text-center mb-4">Todo lo que necesitás</h2>
+        <h2 className="text-3xl font-black text-center mb-4">Todo lo que necesitas</h2>
         <p className="text-muted-foreground text-center mb-12">Una plataforma completa para vivir el fútbol con tus amigos</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
@@ -74,7 +74,7 @@ export default function LandingPage() {
 
       <section className="max-w-7xl mx-auto px-4 py-20 w-full">
         <div className="bg-primary/10 border border-primary/20 rounded-3xl p-10 text-center">
-          <h2 className="text-3xl font-black mb-4">¿Listo para demostrar que sabés de fútbol?</h2>
+          <h2 className="text-3xl font-black mb-4">¿Listo para demostrar que sabes de fútbol?</h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">Gratis, sin apuestas de dinero. Solo pura pasión por el fútbol.</p>
           <Link href="/login" className={cn(buttonVariants({ size: "lg" }), "rounded-full h-14 px-10 text-base font-bold")}>
             Empezar ahora — Es gratis

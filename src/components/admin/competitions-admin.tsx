@@ -22,7 +22,7 @@ export function CompetitionsAdmin({ competitions }: Props) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-10 text-center text-muted-foreground">
-          No hay competiciones creadas. Usá el editor SQL de Supabase para crear la primera.
+          No hay competiciones creadas. Usa el editor SQL de Supabase para crear la primera.
         </CardContent>
       </Card>
     )

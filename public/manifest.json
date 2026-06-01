@@ -1,7 +1,7 @@
 {
-  "name": "fulbo.co — Predicciones de fútbol",
-  "short_name": "fulbo.co",
-  "description": "Predecí partidos, competí en pollas y ganás monedas",
+  "name": "fulbo.io — Predicciones de fútbol",
+  "short_name": "fulbo.io",
+  "description": "Predice partidos, compite en pronos y gana monedas",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0f172a",

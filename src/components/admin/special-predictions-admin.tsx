@@ -10,7 +10,7 @@ import { toast } from "sonner"
 import type { Competition } from "@/types"
 
 const SPECIALS = [
-  { type: "champion" as const, label: "Campeón del torneo", icon: Trophy, note: "Se auto-scorea al cargar el resultado de la final. Podés corregirlo acá si hubo penales." },
+  { type: "champion" as const, label: "Campeón del torneo", icon: Trophy, note: "Se auto-scorea al cargar el resultado de la final. Puedes corregirlo aquí si hubo penales." },
   { type: "top_scorer" as const, label: "Goleador del torneo", icon: Target, note: "Ingresá el nombre exacto del goleador oficial." },
   { type: "golden_ball" as const, label: "Balón de Oro (mejor jugador)", icon: Star, note: "Ingresá el nombre exacto del ganador del Balón de Oro." },
 ]

@@ -14,7 +14,7 @@ export default async function NuevaProno() {
     <div className="max-w-xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-black mb-1">Nuevo prono</h1>
-        <p className="text-muted-foreground">Creá tu grupo y compartilo con tus amigos</p>
+        <p className="text-muted-foreground">Crea tu grupo y compártelo con tus amigos</p>
       </div>
       <CreatePronoForm competitions={competitions ?? []} />
     </div>

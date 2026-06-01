@@ -31,7 +31,7 @@ export default async function DashboardPage() {
       {/* Welcome */}
       <div>
         <h1 className="text-3xl font-black mb-1">Inicio</h1>
-        <p className="text-muted-foreground">Elegí una competición y empezá a predecir</p>
+        <p className="text-muted-foreground">Elige una competición y empieza a predecir</p>
       </div>
 
       {/* Competitions */}
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
             <CardContent className="py-10 text-center">
               <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium mb-1">Todavía no estás en ningún prono</p>
-              <p className="text-sm text-muted-foreground mb-4">Creá uno nuevo o buscá un prono público</p>
+              <p className="text-sm text-muted-foreground mb-4">Crea uno nuevo o busca un prono público</p>
               <div className="flex justify-center gap-3">
                 <Link href="/pronos/nuevo" className={cn(buttonVariants({ size: "sm" }), "rounded-full")}>
                   Crear prono

@@ -147,7 +147,7 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
 
                 {isSelected && type === "spy" && (
                   <div className="mt-1 ml-3 mr-1 rounded-xl border border-primary/20 bg-muted/30 p-2 space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground px-1">Elegí a quién espiar:</p>
+                    <p className="text-xs font-semibold text-muted-foreground px-1">Elige a quién espiar:</p>
                     {otherMembers.length === 0 && (
                       <p className="text-xs text-muted-foreground px-1 py-1">No hay otros miembros.</p>
                     )}
@@ -192,7 +192,7 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
             ? <Loader2 className="h-4 w-4 animate-spin" />
             : selected && canConfirm
               ? `Activar ${POWER_UP_LABELS[selected]} · ${POWER_UP_COSTS[selected]} 🪙`
-              : "Elegí un power-up"}
+              : "Elige un power-up"}
         </Button>
       </DialogContent>
     </Dialog>

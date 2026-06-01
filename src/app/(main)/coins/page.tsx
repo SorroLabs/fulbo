@@ -9,8 +9,8 @@ const POWER_UPS = [
     cost: 20,
     color: "text-blue-500",
     bg: "bg-blue-500/10",
-    description: "Editá tu predicción hasta 2 minutos antes del partido, incluso cuando ya está bloqueada.",
-    detail: "Perfecto para cuando querés esperar a las alineaciones confirmadas antes de pronosticar.",
+    description: "Edita tu predicción hasta 2 minutos antes del partido, incluso cuando ya está bloqueada.",
+    detail: "Perfecto para cuando quieres esperar a las alineaciones confirmadas antes de pronosticar.",
   },
   {
     icon: Zap,
@@ -18,8 +18,8 @@ const POWER_UPS = [
     cost: 15,
     color: "text-yellow-500",
     bg: "bg-yellow-500/10",
-    description: "Duplicá los puntos que ganés en un partido específico.",
-    detail: "Si acertás el marcador exacto obtenés 6 puntos en vez de 3. Si acertás el resultado, 2 en vez de 1.",
+    description: "Duplica los puntos que ganes en un partido específico.",
+    detail: "Si aciertas el marcador exacto obtienes 6 puntos en vez de 3. Si aciertas el resultado, 2 en vez de 1.",
   },
   {
     icon: Eye,
@@ -27,7 +27,7 @@ const POWER_UPS = [
     cost: 15,
     color: "text-purple-500",
     bg: "bg-purple-500/10",
-    description: "Mirá la predicción de otro participante antes de que empiece el partido.",
+    description: "Mira la predicción de otro participante antes de que empiece el partido.",
     detail: "Además te permite editar tu propia predicción hasta 2 minutos antes del partido, como el Cambio tardío.",
   },
   {
@@ -36,7 +36,7 @@ const POWER_UPS = [
     cost: 25,
     color: "text-emerald-500",
     bg: "bg-emerald-500/10",
-    description: "Protegé tu predicción: si el partido termina diferente a lo pronosticado, no perdés posición.",
+    description: "Protege tu predicción: si el partido termina diferente a lo pronosticado, no pierdes posición.",
     detail: "No suma puntos extra, pero evita que un resultado inesperado te aleje del podio.",
   },
 ]
@@ -62,14 +62,14 @@ export default function CoinsPage() {
         </div>
         <h1 className="text-3xl font-black">Monedas & Power-ups</h1>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Ganá monedas prediciendo partidos y usálas para activar ventajas estratégicas dentro de tu prono.
+          Gana monedas prediciendo partidos y úsalas para activar ventajas estratégicas dentro de tu prono.
         </p>
       </div>
 
       {/* How to earn */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold">¿Cómo ganás monedas?</CardTitle>
+          <CardTitle className="text-base font-bold">¿Cómo ganas monedas?</CardTitle>
         </CardHeader>
         <CardContent className="divide-y divide-border/50">
           {HOW_TO_EARN.map(({ action, reward, icon: Icon }) => (
@@ -117,9 +117,9 @@ export default function CoinsPage() {
       {/* CTA */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-5 pb-5 text-center">
-          <p className="text-sm font-semibold mb-1">¿Querés ver tu saldo actual?</p>
+          <p className="text-sm font-semibold mb-1">¿Quieres ver tu saldo actual?</p>
           <p className="text-xs text-muted-foreground">
-            Entrá a cualquier prono y tocá la pestaña <strong>Monedas</strong> para ver tu balance, historial y power-ups activos en ese prono.
+            Entra a cualquier prono y toca la pestaña <strong>Monedas</strong> para ver tu balance, historial y power-ups activos en ese prono.
           </p>
         </CardContent>
       </Card>

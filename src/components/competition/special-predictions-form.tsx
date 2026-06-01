@@ -127,7 +127,7 @@ function TeamCombobox({ teams, value, onChange, disabled }: {
             <span className="flex-1 text-left truncate">{value}</span>
           </>
         ) : (
-          <span className="flex-1 text-left text-muted-foreground">Elegí un equipo...</span>
+          <span className="flex-1 text-left text-muted-foreground">Elige un equipo...</span>
         )}
         <ChevronDown className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", open && "rotate-180")} />
       </button>

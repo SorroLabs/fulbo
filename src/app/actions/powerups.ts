@@ -27,7 +27,7 @@ export async function activatePowerUp({
     .eq("user_id", user.id)
     .single()
 
-  if (!member) return { error: "No sos miembro de este prono" }
+  if (!member) return { error: "No eres miembro de este prono" }
 
   // Verify prono has power-ups enabled
   const { data: prono } = await supabase
@@ -73,7 +73,7 @@ export async function activatePowerUp({
 
   const cost = config?.cost ?? POWER_UP_COSTS[type]
 
-  if (member.coins_in_prono < cost) return { error: "No tenés suficientes monedas" }
+  if (member.coins_in_prono < cost) return { error: "No tienes suficientes monedas" }
 
   // Check already activated for this match
   const { data: existing } = await supabase
@@ -101,8 +101,8 @@ export async function activatePowerUp({
 
   // spy: target_user_id required and must be a prono member
   if (type === "spy") {
-    if (!targetUserId) return { error: "Tenés que elegir un rival para espiar" }
-    if (targetUserId === user.id) return { error: "No podés espiarte a vos mismo" }
+    if (!targetUserId) return { error: "Tienes que elegir un rival para espiar" }
+    if (targetUserId === user.id) return { error: "No puedes espiarte a ti mismo" }
 
     const { data: target } = await supabase
       .from("prono_members")

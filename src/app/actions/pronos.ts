@@ -53,7 +53,7 @@ export async function joinProno({ pronoId, referrerId }: { pronoId: string; refe
     .from("prono_members")
     .insert({ prono_id: pronoId, user_id: user.id, coins_in_prono: 100 })
 
-  if (error?.code === "23505") return { error: "Ya sos miembro de este prono" }
+  if (error?.code === "23505") return { error: "Ya eres miembro de este prono" }
   if (error) return { error: "Error al unirse al prono" }
 
   // Award referral bonus — owner excluded, only non-owner members
@@ -155,7 +155,7 @@ export async function removeMember({ pronoId, userId }: { pronoId: string; userI
     .single()
 
   if (!prono || prono.owner_id !== user.id) return { error: "Sin permisos" }
-  if (userId === user.id) return { error: "No podés removerte a vos mismo" }
+  if (userId === user.id) return { error: "No puedes removerte a ti mismo" }
 
   const { error } = await supabase
     .from("prono_members")

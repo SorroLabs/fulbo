@@ -205,10 +205,10 @@ export const POWER_UP_LABELS: Record<PowerUpType, string> = {
 }
 
 export const POWER_UP_DESCRIPTIONS: Record<PowerUpType, string> = {
-  late_change: "Extendé el plazo de tu predicción hasta 2 minutos antes del partido (máx. 3 por torneo).",
-  double_points: "Duplicá tus puntos si acertás el resultado.",
-  spy: "Mirá la predicción de un rival antes de que cierre el plazo.",
-  wildcard: "Si errás el resultado, igual ganás 1 punto.",
+  late_change: "Extiende el plazo de tu predicción hasta 2 minutos antes del partido (máx. 3 por torneo).",
+  double_points: "Duplica tus puntos si aciertas el resultado.",
+  spy: "Mira la predicción de un rival antes de que cierre el plazo.",
+  wildcard: "Si fallas el resultado, igual ganas 1 punto.",
 }
 
 export const COIN_REWARDS = {

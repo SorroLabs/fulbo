@@ -48,7 +48,7 @@ export function CreatePronoForm({ competitions }: Props) {
             <Input
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Ej: Los pibes del laburo"
+              placeholder="Ej: Los cracks del trabajo"
               className="rounded-xl"
               maxLength={60}
               required
@@ -98,9 +98,9 @@ export function CreatePronoForm({ competitions }: Props) {
                 <p>Los power-ups permiten a los miembros usar sus monedas para activar ventajas en partidos concretos:</p>
                 <ul className="space-y-0.5 pl-3">
                   <li>⚡ <strong>Doble puntos</strong> — duplica los puntos de un partido</li>
-                  <li>🕐 <strong>Cambio tardío</strong> — editá hasta 2 min antes del partido</li>
-                  <li>👁 <strong>Espía</strong> — mirá la predicción de otro miembro</li>
-                  <li>🛡 <strong>Comodín</strong> — protege tu posición si errás</li>
+                  <li>🕐 <strong>Cambio tardío</strong> — edita hasta 2 min antes del partido</li>
+                  <li>👁 <strong>Espía</strong> — mira la predicción de otro miembro</li>
+                  <li>🛡 <strong>Comodín</strong> — protege tu posición si fallas</li>
                 </ul>
                 <p className="pt-0.5">Esta opción no se puede cambiar una vez creado el prono.</p>
               </div>

@@ -34,7 +34,7 @@ export default async function PollasPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black mb-1">Pronos</h1>
-          <p className="text-muted-foreground">Creá o unite a un prono para competir</p>
+          <p className="text-muted-foreground">Crea o únete a un prono para competir</p>
         </div>
         <div className="flex gap-3">
           <JoinPronoDialog />

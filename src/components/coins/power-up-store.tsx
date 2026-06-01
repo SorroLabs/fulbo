@@ -10,28 +10,28 @@ const POWER_UPS = [
     type: "late_change" as const,
     icon: Clock,
     label: "Cambio tardío",
-    desc: "Modificá tu predicción hasta 2 minutos antes del partido (máx. 3 usos por torneo)",
+    desc: "Modifica tu predicción hasta 2 minutos antes del partido (máx. 3 usos por torneo)",
     limit: "3 usos / torneo",
   },
   {
     type: "double_points" as const,
     icon: Zap,
     label: "Doble puntos",
-    desc: "Si acertás este partido, ganás el doble de puntos",
+    desc: "Si aciertas este partido, ganas el doble de puntos",
     limit: "1 por partido",
   },
   {
     type: "spy" as const,
     icon: Eye,
     label: "Espía",
-    desc: "Mirá la predicción de un rival antes de que cierre el plazo",
+    desc: "Mira la predicción de un rival antes de que cierre el plazo",
     limit: "1 por partido",
   },
   {
     type: "wildcard" as const,
     icon: Shield,
     label: "Comodín",
-    desc: "Si fallás el resultado de este partido, igual sumás puntos mínimos",
+    desc: "Si fallas el resultado de este partido, igual sumas puntos mínimos",
     limit: "1 por partido",
   },
 ]
@@ -45,7 +45,7 @@ export function PowerUpStore({ userId, userCoins }: Props) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Los power-ups se aplican al cargar una predicción de un partido específico. Elegís el power-up desde la tarjeta del partido.
+        Los power-ups se aplican al cargar una predicción de un partido específico. Elige el power-up desde la tarjeta del partido.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {POWER_UPS.map(({ type, icon: Icon, label, desc, limit }) => {
