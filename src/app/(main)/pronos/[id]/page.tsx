@@ -64,6 +64,18 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       : { data: [] },
   ])
 
+  // Calculate total_points on-the-fly from predictions so the leaderboard
+  // is always consistent with actual scored predictions, never stale from DB.
+  const pointsByUser = new Map<string, number>()
+  for (const p of (allPredictions ?? []) as any[]) {
+    if (p.points_earned != null) {
+      pointsByUser.set(p.user_id, (pointsByUser.get(p.user_id) ?? 0) + p.points_earned)
+    }
+  }
+  const membersWithLivePoints = (members ?? [])
+    .map((m: any) => ({ ...m, total_points: pointsByUser.get(m.user_id) ?? 0 }))
+    .sort((a: any, b: any) => b.total_points - a.total_points)
+
   const isMember = members?.some((m: any) => m.user_id === user?.id)
   const isOwner = prono.owner_id === user?.id
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
@@ -106,7 +118,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
               initialName={prono.name}
               initialDescription={prono.description ?? ""}
               initialMaxMembers={prono.max_members}
-              members={(members ?? []).map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
+              members={membersWithLivePoints.map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
               ownerId={user!.id}
             />
           )}
@@ -117,7 +129,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-5 text-center">
-            <p className="text-2xl font-black text-primary">{members?.length ?? 0}</p>
+            <p className="text-2xl font-black text-primary">{membersWithLivePoints.length}</p>
             <p className="text-xs text-muted-foreground">Participantes</p>
           </CardContent>
         </Card>
@@ -130,7 +142,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
         <Card>
           <CardContent className="pt-5 text-center">
             <p className="text-2xl font-black text-primary">
-              {members?.find((m: any) => m.user_id === user?.id)?.total_points ?? 0}
+              {membersWithLivePoints.find((m: any) => m.user_id === user?.id)?.total_points ?? 0}
             </p>
             <p className="text-xs text-muted-foreground">Tus puntos</p>
           </CardContent>
@@ -161,7 +173,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
         <TabsContent value="matches" className="mt-6">
           <PronoMatchesTab
             matches={(matches as Match[]) ?? []}
-            members={(members ?? []).map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
+            members={membersWithLivePoints.map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
             predictions={allPredictions ?? []}
             userId={user?.id ?? null}
             pronoId={prono.id}
@@ -186,7 +198,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
               <div className="sm:hidden text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-10 text-right">Pts</div>
             </div>
             <CardContent className="pt-0 divide-y divide-border/50">
-              {members?.map((member: any, i: number) => {
+              {membersWithLivePoints.map((member: any, i: number) => {
                 const isMe = member.user_id === user?.id
                 const initials = member.profiles?.full_name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"
 
@@ -221,7 +233,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className={`font-semibold truncate text-sm ${isMe ? "text-primary" : ""}`}>
-                        {member.profiles?.full_name ?? "Usuario"} {isMe && <span className="font-normal opacity-60">(vos)</span>}
+                        {member.profiles?.full_name ?? "Usuario"} {isMe && <span className="font-normal opacity-60">(tú)</span>}
                         {member.user_id === prono.owner_id && (
                           <Crown className="h-3 w-3 text-primary inline ml-1 mb-0.5" />
                         )}
@@ -246,7 +258,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
                   </div>
                 )
               })}
-              {!members?.length && (
+              {!membersWithLivePoints.length && (
                 <p className="text-center text-muted-foreground py-8">Nadie ha sumado puntos aún.</p>
               )}
             </CardContent>
@@ -266,7 +278,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
         <TabsContent value="members" className="mt-6">
           <Card>
             <CardContent className="pt-4 divide-y divide-border/50">
-              {members?.map((member: any) => {
+              {membersWithLivePoints.map((member: any) => {
                 const initials = member.profiles?.full_name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"
                 return (
                   <div key={member.id} className="flex items-center gap-3 py-3">
