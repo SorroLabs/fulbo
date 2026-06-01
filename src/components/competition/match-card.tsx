@@ -32,9 +32,10 @@ interface MatchCardProps {
   eyeIcon?: React.ReactNode
   onPowerUp?: () => void
   lateDeadline?: boolean
+  onSave?: (matchId: string, home: number, away: number) => void
 }
 
-export function MatchCard({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline }: MatchCardProps) {
+export function MatchCard({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave }: MatchCardProps) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -54,7 +55,10 @@ export function MatchCard({ match, prediction, userId, pronoId, eyeIcon, onPower
         homeScore: parseInt(h), awayScore: parseInt(a),
       })
       if (res.error) toast.error(res.error)
-      else setSaved(true)
+      else {
+        setSaved(true)
+        onSave?.(match.id, parseInt(h), parseInt(a))
+      }
     })
   }
 

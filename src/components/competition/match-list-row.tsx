@@ -24,9 +24,10 @@ interface Props {
   eyeIcon?: React.ReactNode
   onPowerUp?: () => void
   lateDeadline?: boolean
+  onSave?: (matchId: string, home: number, away: number) => void
 }
 
-export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline }: Props) {
+export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave }: Props) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
@@ -45,7 +46,10 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
         homeScore: parseInt(h), awayScore: parseInt(a),
       })
       if (res.error) toast.error(res.error)
-      else setSaved(true)
+      else {
+        setSaved(true)
+        onSave?.(match.id, parseInt(h), parseInt(a))
+      }
     })
   }
 

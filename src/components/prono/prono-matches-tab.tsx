@@ -251,6 +251,11 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
   const [powerUpMatch, setPowerUpMatch] = useState<Match | null>(null)
   const [view, setView] = useState<"grid" | "list">("grid")
   const [filters, setFilters] = useState<MatchFilters>(EMPTY_FILTERS)
+  const [predOverrides, setPredOverrides] = useState<Map<string, { home: number; away: number }>>(new Map())
+
+  function handlePredSaved(matchId: string, home: number, away: number) {
+    setPredOverrides(prev => new Map(prev).set(matchId, { home, away }))
+  }
 
   // Power-up maps
   const myPowerUpsByMatch = useMemo(() => {
@@ -278,11 +283,35 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     const map = new Map<string, Prediction>()
     if (userId) {
       for (const p of predictions) {
-        if (p.user_id === userId) map.set(p.match_id, p)
+        if (p.user_id === userId) {
+          const override = predOverrides.get(p.match_id)
+          map.set(p.match_id, override
+            ? { ...p, home_score: override.home, away_score: override.away }
+            : p)
+        }
+      }
+      // New predictions not yet in server data
+      for (const [matchId, override] of predOverrides) {
+        if (!map.has(matchId)) {
+          const match = matches.find(m => m.id === matchId)
+          if (match) {
+            map.set(matchId, {
+              id: `local-${matchId}`,
+              user_id: userId,
+              match_id: matchId,
+              prono_id: pronoId ?? "",
+              competition_id: match.competition_id,
+              home_score: override.home,
+              away_score: override.away,
+              points_earned: null,
+              created_at: new Date().toISOString(),
+            })
+          }
+        }
       }
     }
     return map
-  }, [predictions, userId])
+  }, [predictions, userId, predOverrides, matches, pronoId])
 
   // Filter utilities
   const matchdays = useMemo(() => computeMatchdays(matches), [matches])
@@ -336,6 +365,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
             key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
             userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={spy}
             onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
+            onSave={handlePredSaved}
           />
         )
       }
@@ -344,6 +374,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
           key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
           userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={spy}
           onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
+          onSave={handlePredSaved}
         />
       )
     }

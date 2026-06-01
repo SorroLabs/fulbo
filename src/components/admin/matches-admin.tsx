@@ -75,6 +75,7 @@ function MatchRow({
   }
 
   const showInputs = match.status !== "finished" || editing
+  const wantsRevert = editing && home === "" && away === ""
 
   return (
     <div className="flex items-center gap-3 py-3 border-b border-border/50 last:border-0">
@@ -106,10 +107,14 @@ function MatchRow({
             placeholder="0"
             className="w-12 h-8 text-sm font-bold rounded-lg border border-input bg-transparent outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
             style={{ textAlign: "center", padding: 0 }} />
-          <Button size="sm" onClick={handleSubmit}
-            disabled={isPending || home === "" || away === ""}
-            className="h-8 px-3 text-xs font-bold rounded-full">
-            {isPending ? "..." : "Guardar"}
+          <Button size="sm"
+            onClick={wantsRevert ? handleRevert : handleSubmit}
+            disabled={isPending || isReverting || (!wantsRevert && (home === "" || away === ""))}
+            variant={wantsRevert ? "destructive" : "default"}
+            className="h-8 px-3 text-xs font-bold rounded-full gap-1">
+            {wantsRevert
+              ? <><Trash2 className="h-3.5 w-3.5" />{isReverting ? "..." : "Borrar"}</>
+              : isPending ? "..." : "Guardar"}
           </Button>
           {editing && (
             <>
