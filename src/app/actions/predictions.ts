@@ -47,6 +47,7 @@ export async function savePrediction({
   }, { onConflict: "user_id,prono_id,match_id" })
 
   if (error) return { error: "Error al guardar la predicción" }
+  revalidatePath(`/pronos`)
   return { success: true }
 }
 
@@ -83,6 +84,7 @@ export async function deletePrediction({
     .eq("match_id", matchId)
     .eq("prono_id", pronoId)
 
+  revalidatePath(`/pronos`)
   return { success: true }
 }
 

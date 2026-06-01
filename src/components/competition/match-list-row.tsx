@@ -68,7 +68,7 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
 
   const handleBlur = () => {
     if (home !== "" && away !== "") handleSave(home, away)
-    else if (home === "" && away === "" && saved) handleDelete()
+    else if (home === "" && away === "" && !!prediction) handleDelete()
   }
 
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const
