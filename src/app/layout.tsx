@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Outfit } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeByTime } from "@/components/theme-by-time"
 import { Toaster } from "@/components/ui/sonner"
 
 const outfit = Outfit({
@@ -31,7 +32,8 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
+          <ThemeByTime />
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>
