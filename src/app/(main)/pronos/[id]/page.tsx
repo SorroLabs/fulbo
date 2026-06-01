@@ -51,7 +51,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
           .in("user_id", memberIds)
       : { data: [] },
     user
-      ? supabase.from("power_up_uses").select("*").eq("prono_id", prono.id)
+      ? supabase.from("power_up_uses").select("*").eq("prono_id", prono.id).eq("user_id", user.id)
       : { data: [] },
     user
       ? supabase.from("prono_members").select("coins_in_prono").eq("prono_id", prono.id).eq("user_id", user.id).single()
