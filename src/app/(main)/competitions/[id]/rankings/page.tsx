@@ -27,6 +27,12 @@ export default async function RankingsPage({ params }: { params: Promise<{ id: s
       .limit(30),
   ])
 
+  const userIds = leaderboard?.map((e: any) => e.user_id) ?? []
+  const { data: profiles } = userIds.length
+    ? await supabase.from("profiles").select("id, nickname").in("id", userIds)
+    : { data: [] }
+  const nicknameMap = new Map(profiles?.map((p: any) => [p.id, p.nickname]) ?? [])
+
   if (!competition) notFound()
 
   const myRank = leaderboard?.find((e: any) => e.user_id === user?.id)
@@ -76,6 +82,7 @@ export default async function RankingsPage({ params }: { params: Promise<{ id: s
               {leaderboard?.map((entry: any, i: number) => {
                 const isMe = entry.user_id === user?.id
                 const initials = entry.full_name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"
+                const nickname = nicknameMap.get(entry.user_id)
                 return (
                   <div key={entry.user_id} className={`flex items-center gap-4 py-3 ${isMe ? "bg-primary/5 -mx-4 px-4 rounded-lg" : ""}`}>
                     <span className={`w-8 text-center font-black ${i < 3 ? "text-lg" : "text-muted-foreground"}`}>
@@ -86,9 +93,12 @@ export default async function RankingsPage({ params }: { params: Promise<{ id: s
                       <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold truncate ${isMe ? "text-primary" : ""}`}>
+                      <p className={`font-semibold leading-tight truncate ${isMe ? "text-primary" : ""}`}>
                         {entry.full_name} {isMe && "(vos)"}
                       </p>
+                      {nickname && (
+                        <p className="text-xs text-muted-foreground leading-tight truncate">@{nickname}</p>
+                      )}
                       <div className="flex gap-2 mt-0.5">
                         <span className="text-xs text-muted-foreground">✅ {entry.exact_predictions}</span>
                         <span className="text-xs text-muted-foreground">☑️ {entry.correct_predictions}</span>
