@@ -86,13 +86,14 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
   return (
     <div
       className={cn(
-        "flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all",
+        "flex flex-col rounded-xl border transition-all",
         match.status === "live" && "border-primary/50 bg-primary/5",
         saved && match.status === "upcoming" && "border-primary/20",
         (match.status === "finished" || (match.status === "upcoming" && !saved)) && "border-border/50",
         tintType && `match-tint-${tintType}`,
       )}
     >
+    <div className="flex items-center gap-3 py-2.5 px-3">
       {/* Date + group */}
       <div className="hidden sm:flex flex-col items-center w-16 shrink-0">
         <span className="text-xs text-muted-foreground text-center whitespace-nowrap">
@@ -176,18 +177,19 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
         </Badge>
         {eyeIcon}
       </div>
-      {/* Spy reveal */}
+      </div>
+      {/* Spy reveal — second row, doesn't affect score centering */}
       {spyPrediction && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs shrink-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-amber-500/20 bg-amber-500/5 rounded-b-xl text-xs">
           <span>🕵️</span>
-          <span className="text-amber-600 dark:text-amber-400 font-medium truncate max-w-[80px]">{spyTargetName ?? "Rival"}</span>
-          <span className="font-black text-amber-600 dark:text-amber-400">{spyPrediction.home_score}-{spyPrediction.away_score}</span>
+          <span className="text-amber-600 dark:text-amber-400 font-medium flex-1 truncate">{spyTargetName ?? "Rival"}</span>
+          <span className="font-black text-amber-600 dark:text-amber-400">{spyPrediction.home_score} - {spyPrediction.away_score}</span>
         </div>
       )}
       {spyPrediction === null && spyTargetName && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs shrink-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-amber-500/20 bg-amber-500/5 rounded-b-xl text-xs">
           <span>🕵️</span>
-          <span className="text-amber-600 dark:text-amber-400 italic">sin pronóstico</span>
+          <span className="text-amber-600 dark:text-amber-400 italic">{spyTargetName} aún no pronosticó</span>
         </div>
       )}
     </div>
