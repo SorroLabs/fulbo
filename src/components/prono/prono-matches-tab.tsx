@@ -232,10 +232,10 @@ const PHASE_LABELS: Record<string, string> = {
 }
 const PHASE_ORDER = ["groups", "round_of_32", "round_of_16", "quarterfinals", "semifinals", "third_place", "final"]
 
-function isLocked(match: Match, spyActive = false) {
+function isLocked(match: Match, extendedDeadline = false) {
   if (match.status !== "upcoming") return true
   const deadline = new Date(match.match_date)
-  deadline.setMinutes(deadline.getMinutes() - (spyActive ? 2 : 20))
+  deadline.setMinutes(deadline.getMinutes() - (extendedDeadline ? 2 : 20))
   return new Date() > deadline
 }
 
@@ -275,6 +275,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
   }, [myPowerUps])
 
   const hasSpy = (matchId: string) => myPowerUpsByMatch.get(matchId)?.has("spy") ?? false
+  const hasLateChange = (matchId: string) => myPowerUpsByMatch.get(matchId)?.has("late_change") ?? false
 
   const spyTargetsByMatch = useMemo(() => {
     const map = new Map<string, string>()
@@ -367,7 +368,9 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
 
   function renderMatch(match: Match) {
     const spy = hasSpy(match.id)
-    const locked = isLocked(match, spy)
+    const lateChange = hasLateChange(match.id)
+    const extendedDeadline = spy || lateChange
+    const locked = isLocked(match, extendedDeadline)
     const canUsePowerUps = !!pronoId && !!userId && powerUpsEnabled && match.status === "upcoming"
 
     const spyTargetId = spyTargetsByMatch.get(match.id)
@@ -387,7 +390,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
         return (
           <MatchCard
             key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
-            userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={spy}
+            userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={extendedDeadline}
             onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
             onSave={handlePredSaved} onDelete={handlePredDeleted}
             spyPrediction={spyPrediction} spyTargetName={spyTargetName}
@@ -397,7 +400,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       return (
         <MatchListRow
           key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
-          userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={spy}
+          userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={extendedDeadline}
           onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
           onSave={handlePredSaved} onDelete={handlePredDeleted}
           spyPrediction={spyPrediction} spyTargetName={spyTargetName}
