@@ -28,7 +28,7 @@ function LoginContent() {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-black tracking-tight mb-2">
             <span className="text-primary">fulbo</span>
-            <span className="text-muted-foreground">.co</span>
+            <span className="text-muted-foreground">.io</span>
           </h1>
           <p className="text-muted-foreground text-sm">Predicciones de fútbol con tus amigos</p>
         </div>
@@ -37,7 +37,7 @@ function LoginContent() {
         <div className="bg-card border border-border rounded-2xl p-8 shadow-xl shadow-black/10">
           <h2 className="text-xl font-bold text-center mb-2">Bienvenido</h2>
           <p className="text-sm text-muted-foreground text-center mb-8">
-            Ingresá con tu cuenta de Google para empezar a predecir
+            Ingresa con tu cuenta de Google para empezar a predecir
           </p>
 
           {error && (
@@ -55,7 +55,7 @@ function LoginContent() {
           </Button>
 
           <p className="mt-6 text-xs text-muted-foreground text-center">
-            Al ingresar aceptás nuestros{" "}
+            Al ingresar aceptas nuestros{" "}
             <span className="underline cursor-pointer">términos de uso</span>.
             <br />
             fulbo.io es solo para entretenimiento.

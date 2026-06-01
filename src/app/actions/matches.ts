@@ -513,6 +513,12 @@ export async function scoreSpecialPredictions({
 async function scoreSpecialPredictionType(supabase: any, competitionId: string, type: string, correctValue: string) {
   const pts = type === "champion" ? 10 : 8
 
+  // Persist the official answer on the competition so the public view can show it
+  const { data: comp } = await supabase.from("competitions").select("official_answers").eq("id", competitionId).single()
+  await supabase.from("competitions").update({
+    official_answers: { ...(comp?.official_answers ?? {}), [type]: correctValue },
+  }).eq("id", competitionId)
+
   // Find all predictions for this type — reset first to allow re-scoring
   const { data: allPreds } = await supabase
     .from("special_predictions")

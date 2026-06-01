@@ -24,6 +24,7 @@ export interface Competition {
   end_date: string | null
   api_league_id: number | null
   created_at: string
+  official_answers?: Record<string, string>
 }
 
 export interface Match {

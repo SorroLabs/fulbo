@@ -28,9 +28,10 @@ interface Props {
   matches: Match[]
   predMap: Map<string, Prediction>
   userId: string | null
+  showUpcoming?: boolean
 }
 
-export function MatchesView({ matches, predMap, userId }: Props) {
+export function MatchesView({ matches, predMap, userId, showUpcoming = true }: Props) {
   const [view, setView] = useState<"grid" | "list">("grid")
   const [filters, setFilters] = useState<MatchFilters>(EMPTY_FILTERS)
 
@@ -95,6 +96,7 @@ export function MatchesView({ matches, predMap, userId }: Props) {
             availableFechas={availableFechas}
             availableGroups={availableGroups}
             showUnpredicted={!!userId}
+            showUpcoming={showUpcoming}
           />
         </div>
         <div className="flex items-center rounded-lg border border-border overflow-hidden shrink-0">

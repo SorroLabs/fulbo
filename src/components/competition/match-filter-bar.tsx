@@ -11,6 +11,7 @@ interface Props {
   availableFechas: number[]
   availableGroups: string[]
   showUnpredicted: boolean
+  showUpcoming?: boolean
 }
 
 function Pill({
@@ -31,7 +32,7 @@ function Pill({
   )
 }
 
-export function MatchFilterBar({ filters, onChange, availableFechas, availableGroups, showUnpredicted }: Props) {
+export function MatchFilterBar({ filters, onChange, availableFechas, availableGroups, showUnpredicted, showUpcoming = true }: Props) {
   const set = (patch: Partial<MatchFilters>) => onChange({ ...filters, ...patch })
   const hasFilters = !isFiltersEmpty(filters)
 
@@ -70,9 +71,11 @@ export function MatchFilterBar({ filters, onChange, availableFechas, availableGr
         </select>
       )}
 
-      <Pill active={filters.status === "upcoming"} onClick={() => set({ status: filters.status === "upcoming" ? null : "upcoming" })}>
-        Próximos
-      </Pill>
+      {showUpcoming && (
+        <Pill active={filters.status === "upcoming"} onClick={() => set({ status: filters.status === "upcoming" ? null : "upcoming" })}>
+          Próximos
+        </Pill>
+      )}
       <Pill active={filters.status === "finished"} onClick={() => set({ status: filters.status === "finished" ? null : "finished" })}>
         Finalizados
       </Pill>

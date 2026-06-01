@@ -3,40 +3,39 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Calendar, Target, BarChart3, Users, Star } from "lucide-react"
+import { Trophy, Calendar, Star } from "lucide-react"
 import { MatchesView } from "@/components/competition/matches-view"
-import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
-import type { Match, Prediction } from "@/types"
+import type { Match } from "@/types"
+
+const SPECIAL_LABELS: Record<string, { label: string; emoji: string }> = {
+  champion:    { label: "Campeón del torneo",         emoji: "🏆" },
+  top_scorer:  { label: "Goleador del torneo",         emoji: "⚽" },
+  golden_ball: { label: "Balón de Oro (mejor jugador)", emoji: "🌟" },
+}
 
 export default async function CompetitionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: competition }, { data: matches }, { data: userPredictions }, { data: specialPreds }] = await Promise.all([
+  const [{ data: competition }, { data: matches }] = await Promise.all([
     supabase.from("competitions").select("*").eq("id", id).single(),
     supabase.from("matches").select("*").eq("competition_id", id)
       .not("home_team", "like", "Ganador%")
       .order("match_date"),
-    user ? supabase.from("predictions").select("*").eq("user_id", user.id).eq("competition_id", id) : { data: [] },
-    user ? supabase.from("special_predictions").select("*").eq("user_id", user.id).eq("competition_id", id) : { data: [] },
   ])
 
   if (!competition) notFound()
 
-  const teams = Array.from(new Set(
-    (matches as Match[] | null)
-      ?.filter(m => m.phase === "groups")
-      .flatMap(m => [m.home_team, m.away_team]) ?? []
-  )).sort((a, b) => a.localeCompare(b, "es"))
+  const matchList = (matches as Match[]) ?? []
+  const totalMatches = matchList.length
+  const finishedMatches = matchList.filter(m => m.status === "finished").length
+  const liveMatches = matchList.filter(m => m.status === "live").length
 
-  const predMap = new Map((userPredictions ?? []).map((p: any) => [p.match_id, p] as [string, Prediction]))
-
-  const totalMatches = matches?.length ?? 0
-  const predictedCount = userPredictions?.length ?? 0
+  const officialAnswers = competition.official_answers ?? {}
+  const hasOfficialAnswers = Object.keys(officialAnswers).length > 0
 
   return (
     <div className="space-y-8">
@@ -56,11 +55,8 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           </div>
         </div>
         <div className="flex gap-3">
-          <Link href={`/competitions/${id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2")}>
-            <BarChart3 className="h-4 w-4" /> Rankings
-          </Link>
-          <Link href={`/competitions/${id}/analytics`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2")}>
-            <Target className="h-4 w-4" /> Analytics
+          <Link href={`/rankings?comp=${id}`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2")}>
+            <Trophy className="h-4 w-4" /> Rankings
           </Link>
         </div>
       </div>
@@ -69,8 +65,8 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-5 text-center">
-            <p className="text-2xl font-black text-primary">{predictedCount}</p>
-            <p className="text-xs text-muted-foreground">Predicciones cargadas</p>
+            <p className="text-2xl font-black text-primary">{finishedMatches}</p>
+            <p className="text-xs text-muted-foreground">Partidos jugados</p>
           </CardContent>
         </Card>
         <Card>
@@ -81,10 +77,12 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
         </Card>
         <Card>
           <CardContent className="pt-5 text-center">
-            <p className="text-2xl font-black text-primary">
-              {totalMatches > 0 ? Math.round((predictedCount / totalMatches) * 100) : 0}%
+            <p className={`text-2xl font-black ${liveMatches > 0 ? "text-green-500" : ""}`}>
+              {liveMatches > 0 ? liveMatches : totalMatches - finishedMatches}
             </p>
-            <p className="text-xs text-muted-foreground">Completado</p>
+            <p className="text-xs text-muted-foreground">
+              {liveMatches > 0 ? "En juego ahora" : "Por jugarse"}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -94,28 +92,46 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           <TabsTrigger value="matches" className="rounded-full gap-2">
             <Calendar className="h-4 w-4" /> Partidos
           </TabsTrigger>
-          <TabsTrigger value="specials" className="rounded-full gap-2">
-            <Star className="h-4 w-4" /> Predicciones especiales
-          </TabsTrigger>
+          {hasOfficialAnswers && (
+            <TabsTrigger value="specials" className="rounded-full gap-2">
+              <Star className="h-4 w-4" /> Resultados especiales
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="matches" className="mt-6">
           <MatchesView
-            matches={(matches as Match[]) ?? []}
-            predMap={predMap}
-            userId={user?.id ?? null}
+            matches={matchList}
+            predMap={new Map()}
+            userId={null}
+            showUpcoming={false}
           />
         </TabsContent>
 
-        <TabsContent value="specials" className="mt-6">
-          <SpecialPredictionsForm
-            competitionId={id}
-            isLocked={(matches as Match[] | null)?.some(m => m.status === "live" || m.status === "finished") ?? false}
-            userId={user?.id ?? null}
-            existing={specialPreds ?? []}
-            teams={teams}
-          />
-        </TabsContent>
+        {hasOfficialAnswers && (
+          <TabsContent value="specials" className="mt-6">
+            <div className="space-y-3">
+              {Object.entries(officialAnswers as Record<string, string>).map(([type, value]) => {
+                const cfg = SPECIAL_LABELS[type]
+                if (!cfg) return null
+                return (
+                  <Card key={type}>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{cfg.emoji}</span>
+                        <div>
+                          <p className="text-xs text-muted-foreground font-medium">{cfg.label}</p>
+                          <p className="text-lg font-black">{value}</p>
+                        </div>
+                        <Badge variant="outline" className="ml-auto text-primary border-primary/30">Oficial</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )
