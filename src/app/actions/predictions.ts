@@ -30,8 +30,19 @@ export async function savePrediction({
     return { error: "No se puede predecir este partido" }
   }
 
+  // Check if user has late_change or spy (extends deadline to 2 min before)
+  const { data: latePU } = await supabase
+    .from("power_up_uses")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("prono_id", pronoId)
+    .eq("match_id", matchId)
+    .in("type", ["late_change", "spy"])
+    .maybeSingle()
+
+  const minutesBefore = latePU ? 2 : 20
   const deadline = new Date(match.match_date)
-  deadline.setMinutes(deadline.getMinutes() - 10)
+  deadline.setMinutes(deadline.getMinutes() - minutesBefore)
   if (new Date() > deadline) {
     return { error: "El plazo para predecir este partido ya cerró" }
   }
