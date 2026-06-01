@@ -16,7 +16,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <div className="max-w-lg mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-black mb-1">{setup ? "Configurá tu perfil" : "Ajustes"}</h1>
-        <p className="text-muted-foreground">Tu identidad en fulbo.co</p>
+        <p className="text-muted-foreground">Tu identidad en fulbo.io</p>
       </div>
       <ProfileForm profile={profile as Profile} isSetup={!!setup} />
     </div>

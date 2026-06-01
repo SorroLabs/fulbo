@@ -67,7 +67,7 @@ export default async function AdminPage() {
         <ShieldCheck className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-black">Panel de administración</h1>
-          <p className="text-muted-foreground">fulbo.co · Mundial 2026</p>
+          <p className="text-muted-foreground">fulbo.io · Mundial 2026</p>
         </div>
       </div>
 

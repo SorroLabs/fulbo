@@ -11,7 +11,7 @@ const outfit = Outfit({
 })
 
 export const metadata: Metadata = {
-  title: "fulbo.co — Predicciones de fútbol",
+  title: "fulbo.io — Predicciones de fútbol",
   description: "La forma más divertida de vivir los torneos de fútbol. Creá tu prono, invitá a tus amigos y competí en rankings globales.",
   manifest: "/manifest.json",
 }

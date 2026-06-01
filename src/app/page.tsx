@@ -83,7 +83,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="border-t border-border/50 py-6 text-center text-sm text-muted-foreground">
-        <span className="font-semibold text-primary">fulbo.co</span> — Solo para entretenimiento · {new Date().getFullYear()}
+        <span className="font-semibold text-primary">fulbo.io</span> — Solo para entretenimiento · {new Date().getFullYear()}
       </footer>
     </div>
   )

@@ -58,7 +58,7 @@ function LoginContent() {
             Al ingresar aceptás nuestros{" "}
             <span className="underline cursor-pointer">términos de uso</span>.
             <br />
-            fulbo.co es solo para entretenimiento.
+            fulbo.io es solo para entretenimiento.
           </p>
         </div>
 
