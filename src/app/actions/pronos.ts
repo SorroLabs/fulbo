@@ -155,13 +155,37 @@ export async function updatePronoSettings({
   return { success: true }
 }
 
-export async function toggleMemberActive({ pronoId, userId, isActive }: { pronoId: string; userId: string; isActive: boolean }) {
+export async function toggleCoAdmin({ pronoId, userId, makeAdmin }: { pronoId: string; userId: string; makeAdmin: boolean }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "No autenticado" }
 
   const { data: prono } = await supabase.from("pronos").select("owner_id").eq("id", pronoId).single()
-  if (!prono || prono.owner_id !== user.id) return { error: "Sin permisos" }
+  if (!prono || prono.owner_id !== user.id) return { error: "Solo el fundador puede gestionar co-admins" }
+  if (userId === user.id) return { error: "No puedes cambiarte el rol a ti mismo" }
+
+  const { error } = await supabase
+    .from("prono_members")
+    .update({ role: makeAdmin ? "admin" : "member" })
+    .eq("prono_id", pronoId)
+    .eq("user_id", userId)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/pronos`)
+  return { success: true }
+}
+
+export async function toggleMemberActive({ pronoId, userId, isActive }: { pronoId: string; userId: string; isActive: boolean }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autenticado" }
+
+  const [{ data: prono }, { data: myMembership }] = await Promise.all([
+    supabase.from("pronos").select("owner_id").eq("id", pronoId).single(),
+    supabase.from("prono_members").select("role").eq("prono_id", pronoId).eq("user_id", user.id).single(),
+  ])
+  const canManage = prono?.owner_id === user.id || myMembership?.role === "admin"
+  if (!canManage) return { error: "Sin permisos" }
   if (userId === user.id) return { error: "No puedes desactivarte a ti mismo" }
 
   const { error } = await supabase
@@ -180,14 +204,14 @@ export async function removeMember({ pronoId, userId }: { pronoId: string; userI
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "No autenticado" }
 
-  const { data: prono } = await supabase
-    .from("pronos")
-    .select("owner_id")
-    .eq("id", pronoId)
-    .single()
-
-  if (!prono || prono.owner_id !== user.id) return { error: "Sin permisos" }
+  const [{ data: prono }, { data: myMembership }] = await Promise.all([
+    supabase.from("pronos").select("owner_id").eq("id", pronoId).single(),
+    supabase.from("prono_members").select("role").eq("prono_id", pronoId).eq("user_id", user.id).single(),
+  ])
+  const canManage = prono?.owner_id === user.id || myMembership?.role === "admin"
+  if (!canManage) return { error: "Sin permisos" }
   if (userId === user.id) return { error: "No puedes removerte a ti mismo" }
+  if (userId === prono?.owner_id) return { error: "No puedes eliminar al fundador" }
 
   const { error } = await supabase
     .from("prono_members")

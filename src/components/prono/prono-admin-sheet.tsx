@@ -13,14 +13,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Settings, UserX, Trash2, Users, ChevronDown, ChevronUp, ToggleLeft, ToggleRight } from "lucide-react"
+import { Settings, UserX, Trash2, Users, ChevronDown, ChevronUp, ToggleLeft, ToggleRight, ShieldCheck, ShieldOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { updatePronoSettings, removeMember, deleteProno, toggleMemberActive } from "@/app/actions/pronos"
+import { updatePronoSettings, removeMember, deleteProno, toggleMemberActive, toggleCoAdmin } from "@/app/actions/pronos"
 
 interface Member {
   user_id: string
   is_active: boolean
+  role: string
   profiles: { full_name: string | null; avatar_url: string | null } | null
 }
 
@@ -32,6 +33,7 @@ interface Props {
   initialMaxMembers: number
   members: Member[]
   ownerId: string
+  currentUserId: string
 }
 
 export function PronoAdminSheet({
@@ -42,7 +44,9 @@ export function PronoAdminSheet({
   initialMaxMembers,
   members,
   ownerId,
+  currentUserId,
 }: Props) {
+  const isFounder = currentUserId === ownerId
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -54,6 +58,7 @@ export function PronoAdminSheet({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [promotingId, setPromotingId] = useState<string | null>(null)
 
   function handleSaveSettings() {
     if (!name.trim()) { toast.error("El nombre no puede estar vacío"); return }
@@ -62,6 +67,17 @@ export function PronoAdminSheet({
       const res = await updatePronoSettings({ pronoId, name, description, maxMembers })
       if (res.error) { toast.error(res.error); return }
       toast.success("Configuración guardada")
+      router.refresh()
+    })
+  }
+
+  function handleToggleCoAdmin(userId: string, currentlyAdmin: boolean, memberName: string) {
+    setPromotingId(userId)
+    startTransition(async () => {
+      const res = await toggleCoAdmin({ pronoId, userId, makeAdmin: !currentlyAdmin })
+      setPromotingId(null)
+      if (res.error) { toast.error(res.error); return }
+      toast.success(`${memberName} ${!currentlyAdmin ? "es ahora co-admin" : "ya no es co-admin"}`)
       router.refresh()
     })
   }
@@ -170,7 +186,9 @@ export function PronoAdminSheet({
               {members.map(m => {
                 const name = m.profiles?.full_name ?? "Usuario"
                 const initials = name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
-                const isOwner = m.user_id === ownerId
+                const isFounderMember = m.user_id === ownerId
+                const isCoAdmin = m.role === "admin"
+                const isMe = m.user_id === currentUserId
                 return (
                   <div key={m.user_id} className={cn("flex items-center gap-3 py-2 px-1", !m.is_active && "opacity-50")}>
                     <Avatar className="h-8 w-8">
@@ -179,11 +197,30 @@ export function PronoAdminSheet({
                     </Avatar>
                     <span className="flex-1 text-sm font-medium truncate">
                       {name}
-                      {isOwner && <span className="text-xs text-primary font-normal ml-1">(vos)</span>}
+                      {isMe && <span className="text-xs text-primary font-normal ml-1">(vos)</span>}
+                      {isFounderMember && !isMe && <span className="text-xs text-primary font-normal ml-1">· fundador</span>}
+                      {isCoAdmin && !isFounderMember && <span className="text-xs text-amber-500 font-normal ml-1">· co-admin</span>}
                       {!m.is_active && <span className="text-xs text-red-500 font-normal ml-1">· desactivado</span>}
                     </span>
-                    {!isOwner && (
+                    {!isMe && !isFounderMember && (
                       <div className="flex items-center gap-1">
+                        {isFounder && (
+                          <button
+                            onClick={() => handleToggleCoAdmin(m.user_id, isCoAdmin, name)}
+                            disabled={isPending && promotingId === m.user_id}
+                            className={cn(
+                              "p-1.5 rounded-lg transition-colors disabled:opacity-40",
+                              isCoAdmin
+                                ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                : "text-muted-foreground hover:bg-muted"
+                            )}
+                            title={isCoAdmin ? "Quitar co-admin" : "Hacer co-admin"}
+                          >
+                            {isCoAdmin
+                              ? <ShieldCheck className="h-4 w-4" />
+                              : <ShieldOff className="h-4 w-4" />}
+                          </button>
+                        )}
                         <button
                           onClick={() => handleToggleActive(m.user_id, m.is_active, name)}
                           disabled={isPending && togglingId === m.user_id}
@@ -195,9 +232,7 @@ export function PronoAdminSheet({
                           )}
                           title={m.is_active ? "Desactivar" : "Activar"}
                         >
-                          {m.is_active
-                            ? <ToggleRight className="h-4 w-4" />
-                            : <ToggleLeft className="h-4 w-4" />}
+                          {m.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
                         </button>
                         <button
                           onClick={() => handleRemoveMember(m.user_id, name)}
@@ -215,10 +250,9 @@ export function PronoAdminSheet({
             </div>
           </section>
 
-          <Separator />
-
-          {/* Danger zone */}
-          <section className="space-y-3">
+          {/* Danger zone — only founder */}
+          {isFounder && <Separator />}
+          {isFounder && <section className="space-y-3">
             <h3 className="text-sm font-bold uppercase tracking-wide text-red-500">Zona de peligro</h3>
             {!confirmDelete ? (
               <Button
@@ -253,7 +287,7 @@ export function PronoAdminSheet({
                 </div>
               </div>
             )}
-          </section>
+          </section>}
         </div>
       </SheetContent>
     </Sheet>

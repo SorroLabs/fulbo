@@ -120,10 +120,12 @@ export default async function PollaDetailPage({ params, searchParams }: { params
     .sort((a: any, b: any) => b.total_points - a.total_points)
 
   const allMembersForAdmin = (members ?? [])
-    .map((m: any) => ({ user_id: m.user_id, is_active: m.is_active !== false, profiles: m.profiles }))
+    .map((m: any) => ({ user_id: m.user_id, is_active: m.is_active !== false, role: m.role ?? "member", profiles: m.profiles }))
 
   const isMember = members?.some((m: any) => m.user_id === user?.id)
   const isOwner = prono.owner_id === user?.id
+  const isCoAdmin = !isOwner && members?.some((m: any) => m.user_id === user?.id && m.role === "admin")
+  const canManage = isOwner || isCoAdmin
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
   const competition = (prono as any).competitions
   const teams = Array.from(new Set(
@@ -157,7 +159,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
           {(isMember || isOwner) && (
             <PronoInvite inviteCode={prono.invite_code} appUrl={appUrl} userId={user?.id} />
           )}
-          {isOwner && (
+          {canManage && (
             <PronoAdminSheet
               pronoId={prono.id}
               inviteCode={prono.invite_code}
@@ -165,7 +167,8 @@ export default async function PollaDetailPage({ params, searchParams }: { params
               initialDescription={prono.description ?? ""}
               initialMaxMembers={prono.max_members}
               members={allMembersForAdmin}
-              ownerId={user!.id}
+              ownerId={prono.owner_id}
+              currentUserId={user!.id}
             />
           )}
         </div>
