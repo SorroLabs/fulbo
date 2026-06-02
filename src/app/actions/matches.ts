@@ -147,7 +147,6 @@ async function notifyMatchResult(supabase: any, matchId: string, homeScore: numb
     .single()
   if (!match) return
 
-  // Get all unique members across all pronos in this competition
   const { data: pronos } = await supabase
     .from("pronos")
     .select("id")
@@ -156,25 +155,15 @@ async function notifyMatchResult(supabase: any, matchId: string, homeScore: numb
 
   const { data: members } = await supabase
     .from("prono_members")
-    .select("user_id, predictions!inner(points_earned, match_id)")
+    .select("user_id")
     .in("prono_id", pronos.map((p: any) => p.id))
-    .eq("predictions.match_id", matchId)
 
   const uniqueUserIds = [...new Set((members ?? []).map((m: any) => m.user_id))] as string[]
   if (!uniqueUserIds.length) return
 
-  // Get individual points per user
-  const { data: preds } = await supabase
-    .from("predictions")
-    .select("user_id, points_earned")
-    .eq("match_id", matchId)
-    .in("user_id", uniqueUserIds)
-
-  const ptsByUser = new Map((preds ?? []).map((p: any) => [p.user_id, p.points_earned ?? 0]))
-
   await sendPushToUsers(uniqueUserIds, {
     title: `${match.home_team} ${homeScore} - ${awayScore} ${match.away_team}`,
-    body: "Resultado cargado. ¡Mirá cuántos puntos sumaste!",
+    body: "Resultado cargado. ¡Mira cuántos puntos sumaste!",
     url: `/pronos`,
   })
 }
