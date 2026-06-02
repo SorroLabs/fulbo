@@ -241,11 +241,17 @@ export default async function PollaDetailPage({ params, searchParams }: { params
               <div className="sm:hidden text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-10 text-right">Pts</div>
             </div>
             <CardContent className="pt-0 divide-y divide-border/50">
-              {membersWithLivePoints.map((member: any, i: number) => {
+              {(() => {
+                const finishedMatches = (matches ?? []).filter((m: any) => m.status === "finished")
+                const doublePointsSet = new Set(
+                  ((allPowerUps ?? []) as any[])
+                    .filter((pu: any) => pu.type === "double_points")
+                    .map((pu: any) => `${pu.user_id}:${pu.match_id}`)
+                )
+                return membersWithLivePoints.map((member: any, i: number) => {
                 const isMe = member.user_id === user?.id
                 const initials = member.profiles?.full_name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"
 
-                const finishedMatches = (matches ?? []).filter((m: any) => m.status === "finished")
                 const memberPreds = (allPredictions ?? []).filter((p: any) => p.user_id === member.user_id)
                 const predByMatch = new Map(memberPreds.map((p: any) => [p.match_id, p]))
 
@@ -257,7 +263,9 @@ export default async function PollaDetailPage({ params, searchParams }: { params
                   const pred = predByMatch.get(m.id)
                   if (!pred) continue
                   jugados++
-                  maxPts += m.phase === "groups" ? 10 : 20
+                  const base = m.phase === "groups" ? 10 : 20
+                  const hasDouble = doublePointsSet.has(`${member.user_id}:${m.id}`)
+                  maxPts += hasDouble ? base * 2 : base
                   if (pred.home_score === m.home_score && pred.away_score === m.away_score) {
                     exactos++
                   }
@@ -303,7 +311,8 @@ export default async function PollaDetailPage({ params, searchParams }: { params
                     <span className="sm:hidden font-black text-base shrink-0 w-10 text-right">{member.total_points}</span>
                   </div>
                 )
-              })}
+              })
+              })()}
               {!membersWithLivePoints.length && (
                 <p className="text-center text-muted-foreground py-8">Nadie ha sumado puntos aún.</p>
               )}
