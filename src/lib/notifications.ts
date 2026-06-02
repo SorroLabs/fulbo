@@ -1,17 +1,20 @@
-import webpush from "web-push"
 import { createServiceClient } from "@/lib/supabase/service"
-
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-)
 
 export interface PushPayload {
   title: string
   body: string
   url?: string
   icon?: string
+}
+
+async function getWebPush() {
+  const webpush = (await import("web-push")).default
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!,
+  )
+  return webpush
 }
 
 export async function sendPushToUser(userId: string, payload: PushPayload) {
@@ -23,13 +26,14 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
 
   if (!subs?.length) return
 
+  const webpush = await getWebPush()
+
   await Promise.allSettled(
     subs.map((sub) =>
       webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         JSON.stringify(payload),
       ).catch(() => {
-        // Remove expired/invalid subscriptions
         supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint)
       })
     )
