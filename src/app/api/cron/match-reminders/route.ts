@@ -52,13 +52,13 @@ export async function GET(request: Request) {
     const alreadyPredicted = new Set((existing ?? []).map((p: any) => p.user_id))
     const toNotify = allUserIds.filter((id) => !alreadyPredicted.has(id))
 
-    const matchTime = new Date(match.match_date).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })
+    const minsLeft = Math.round((new Date(match.match_date).getTime() - now.getTime()) / 60000)
 
     await Promise.allSettled(
       toNotify.map((userId) =>
         sendPushToUser(userId, {
           title: `⏰ ${match.home_team} vs ${match.away_team}`,
-          body: `El partido comienza a las ${matchTime}. ¡Todavía puedes predecir!`,
+          body: `El partido comienza en aprox. ${minsLeft} minutos. ¡Todavía puedes predecir!`,
           url: `/pronos`,
         })
       )
