@@ -27,8 +27,9 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         {children}
       </main>
-      <footer className="border-t border-border/50 py-6 text-center text-sm text-muted-foreground">
-        <span className="font-semibold text-primary">fulbo.io</span> — Predicciones de fútbol · {new Date().getFullYear()}
+      <footer className="border-t border-border/50 py-6 text-center text-sm text-muted-foreground space-y-1">
+        <p><span className="font-semibold text-primary">fulbo.io</span> — Predicciones de fútbol · {new Date().getFullYear()}</p>
+        <p className="text-xs opacity-60">Powered by <span className="font-medium">SorroLabs</span></p>
       </footer>
     </div>
   )
