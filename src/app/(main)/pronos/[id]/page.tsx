@@ -115,8 +115,12 @@ export default async function PollaDetailPage({ params, searchParams }: { params
     }
   }
   const membersWithLivePoints = (members ?? [])
+    .filter((m: any) => m.is_active !== false)
     .map((m: any) => ({ ...m, total_points: pointsByUser.get(m.user_id) ?? 0 }))
     .sort((a: any, b: any) => b.total_points - a.total_points)
+
+  const allMembersForAdmin = (members ?? [])
+    .map((m: any) => ({ user_id: m.user_id, is_active: m.is_active !== false, profiles: m.profiles }))
 
   const isMember = members?.some((m: any) => m.user_id === user?.id)
   const isOwner = prono.owner_id === user?.id
@@ -160,7 +164,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
               initialName={prono.name}
               initialDescription={prono.description ?? ""}
               initialMaxMembers={prono.max_members}
-              members={membersWithLivePoints.map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
+              members={allMembersForAdmin}
               ownerId={user!.id}
             />
           )}

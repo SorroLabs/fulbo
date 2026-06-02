@@ -13,13 +13,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Settings, UserX, Trash2, Users, ChevronDown, ChevronUp } from "lucide-react"
+import { Settings, UserX, Trash2, Users, ChevronDown, ChevronUp, ToggleLeft, ToggleRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { updatePronoSettings, removeMember, deleteProno } from "@/app/actions/pronos"
+import { updatePronoSettings, removeMember, deleteProno, toggleMemberActive } from "@/app/actions/pronos"
 
 interface Member {
   user_id: string
+  is_active: boolean
   profiles: { full_name: string | null; avatar_url: string | null } | null
 }
 
@@ -52,6 +53,7 @@ export function PronoAdminSheet({
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   function handleSaveSettings() {
     if (!name.trim()) { toast.error("El nombre no puede estar vacío"); return }
@@ -60,6 +62,17 @@ export function PronoAdminSheet({
       const res = await updatePronoSettings({ pronoId, name, description, maxMembers })
       if (res.error) { toast.error(res.error); return }
       toast.success("Configuración guardada")
+      router.refresh()
+    })
+  }
+
+  function handleToggleActive(userId: string, currentlyActive: boolean, memberName: string) {
+    setTogglingId(userId)
+    startTransition(async () => {
+      const res = await toggleMemberActive({ pronoId, userId, isActive: !currentlyActive })
+      setTogglingId(null)
+      if (res.error) { toast.error(res.error); return }
+      toast.success(`${memberName} ${!currentlyActive ? "activado" : "desactivado"}`)
       router.refresh()
     })
   }
@@ -159,23 +172,42 @@ export function PronoAdminSheet({
                 const initials = name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
                 const isOwner = m.user_id === ownerId
                 return (
-                  <div key={m.user_id} className="flex items-center gap-3 py-2 px-1">
+                  <div key={m.user_id} className={cn("flex items-center gap-3 py-2 px-1", !m.is_active && "opacity-50")}>
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
                       <AvatarImage src={m.profiles?.avatar_url ?? undefined} />
                     </Avatar>
                     <span className="flex-1 text-sm font-medium truncate">
-                      {name} {isOwner && <span className="text-xs text-primary font-normal">(vos)</span>}
+                      {name}
+                      {isOwner && <span className="text-xs text-primary font-normal ml-1">(vos)</span>}
+                      {!m.is_active && <span className="text-xs text-red-500 font-normal ml-1">· desactivado</span>}
                     </span>
                     {!isOwner && (
-                      <button
-                        onClick={() => handleRemoveMember(m.user_id, name)}
-                        disabled={isPending && removingId === m.user_id}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-40"
-                        title="Remover del prono"
-                      >
-                        <UserX className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleToggleActive(m.user_id, m.is_active, name)}
+                          disabled={isPending && togglingId === m.user_id}
+                          className={cn(
+                            "p-1.5 rounded-lg transition-colors disabled:opacity-40",
+                            m.is_active
+                              ? "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                              : "text-muted-foreground hover:bg-muted"
+                          )}
+                          title={m.is_active ? "Desactivar" : "Activar"}
+                        >
+                          {m.is_active
+                            ? <ToggleRight className="h-4 w-4" />
+                            : <ToggleLeft className="h-4 w-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleRemoveMember(m.user_id, name)}
+                          disabled={isPending && removingId === m.user_id}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-40"
+                          title="Eliminar del prono"
+                        >
+                          <UserX className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 )

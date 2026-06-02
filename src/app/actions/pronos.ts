@@ -155,6 +155,26 @@ export async function updatePronoSettings({
   return { success: true }
 }
 
+export async function toggleMemberActive({ pronoId, userId, isActive }: { pronoId: string; userId: string; isActive: boolean }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autenticado" }
+
+  const { data: prono } = await supabase.from("pronos").select("owner_id").eq("id", pronoId).single()
+  if (!prono || prono.owner_id !== user.id) return { error: "Sin permisos" }
+  if (userId === user.id) return { error: "No puedes desactivarte a ti mismo" }
+
+  const { error } = await supabase
+    .from("prono_members")
+    .update({ is_active: isActive })
+    .eq("prono_id", pronoId)
+    .eq("user_id", userId)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/pronos`)
+  return { success: true }
+}
+
 export async function removeMember({ pronoId, userId }: { pronoId: string; userId: string }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
