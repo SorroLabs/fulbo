@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Trophy, Users, BarChart3, Coins, User, LogOut, Menu, X, ShieldCheck } from "lucide-react"
+import { Trophy, Users, BarChart3, HelpCircle, User, LogOut, Menu, X, ShieldCheck } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -22,7 +22,7 @@ const NAV_LINKS = [
   { href: "/dashboard", label: "Inicio", icon: Trophy },
   { href: "/pronos", label: "Mis pronos", icon: Users },
   { href: "/rankings", label: "Rankings", icon: BarChart3 },
-  { href: "/coins", label: "Monedas", icon: Coins },
+  { href: "/how-to-play", label: "Cómo jugar", icon: HelpCircle },
 ]
 
 interface NavbarProps {
