@@ -15,35 +15,36 @@ function urlBase64ToUint8Array(base64String: string) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)))
 }
 
-export function PushNotificationsToggle({ initialEndpoint }: { initialEndpoint: string | null }) {
-  const [endpoint, setEndpoint] = useState<string | null>(initialEndpoint)
-  const [loading, setLoading] = useState(false)
+export function PushNotificationsToggle() {
   const [supported, setSupported] = useState(false)
+  const [subscribed, setSubscribed] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setSupported("serviceWorker" in navigator && "PushManager" in window)
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return
+    setSupported(true)
+    navigator.serviceWorker.register("/sw.js").then(async () => {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      setSubscribed(!!sub)
+    }).catch(() => {})
   }, [])
-
-  useEffect(() => {
-    if (!supported) return
-    navigator.serviceWorker.register("/sw.js").catch(() => {})
-  }, [supported])
 
   if (!supported) return null
 
   async function handleToggle() {
     setLoading(true)
     try {
-      if (endpoint) {
-        // Unsubscribe
+      if (subscribed) {
         const reg = await navigator.serviceWorker.ready
         const sub = await reg.pushManager.getSubscription()
-        await sub?.unsubscribe()
-        await unsubscribePush(endpoint)
-        setEndpoint(null)
+        if (sub) {
+          await unsubscribePush(sub.endpoint)
+          await sub.unsubscribe()
+        }
+        setSubscribed(false)
         toast.success("Notificaciones desactivadas")
       } else {
-        // Subscribe
         const permission = await Notification.requestPermission()
         if (permission !== "granted") {
           toast.error("Permiso denegado. Actívalo desde la configuración del navegador.")
@@ -57,7 +58,7 @@ export function PushNotificationsToggle({ initialEndpoint }: { initialEndpoint: 
         const json = sub.toJSON()
         const keys = json.keys as { p256dh: string; auth: string }
         await subscribePush({ endpoint: json.endpoint!, p256dh: keys.p256dh, auth: keys.auth })
-        setEndpoint(json.endpoint!)
+        setSubscribed(true)
         toast.success("¡Notificaciones activadas!")
       }
     } catch {
@@ -73,14 +74,13 @@ export function PushNotificationsToggle({ initialEndpoint }: { initialEndpoint: 
       size="icon"
       onClick={handleToggle}
       disabled={loading}
-      title={endpoint ? "Desactivar notificaciones" : "Activar notificaciones"}
-      className="h-9 w-9 relative"
+      title={subscribed ? "Desactivar notificaciones" : "Activar notificaciones"}
+      className="h-9 w-9"
     >
-      {endpoint ? (
-        <Bell className="h-4 w-4 text-primary" />
-      ) : (
-        <BellOff className="h-4 w-4 text-muted-foreground" />
-      )}
+      {subscribed
+        ? <Bell className="h-4 w-4 text-primary" />
+        : <BellOff className="h-4 w-4 text-muted-foreground" />
+      }
     </Button>
   )
 }

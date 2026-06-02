@@ -28,10 +28,9 @@ const NAV_LINKS = [
 
 interface NavbarProps {
   profile: Profile | null
-  pushEndpoint: string | null
 }
 
-export function Navbar({ profile, pushEndpoint }: NavbarProps) {
+export function Navbar({ profile }: NavbarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -82,7 +81,7 @@ export function Navbar({ profile, pushEndpoint }: NavbarProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          {profile && <PushNotificationsToggle initialEndpoint={pushEndpoint} />}
+          {profile && <PushNotificationsToggle />}
           <ThemeToggle />
 
           {/* User menu */}
