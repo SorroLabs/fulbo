@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { sendPushToUsers } from "@/lib/notifications"
 
 function normalize(s: string): string {
   return s
@@ -131,10 +132,51 @@ export async function reportMatchResult({
   await awardPhaseBonus(supabase, matchId)
   await awardMatchdayWinner(supabase, matchId)
   await autoScoreChampion(supabase, matchId, homeScore, awayScore)
+  notifyMatchResult(supabase, matchId, homeScore, awayScore).catch(() => {})
 
   revalidatePath("/admin")
   revalidatePath("/", "layout")
   return { success: true }
+}
+
+async function notifyMatchResult(supabase: any, matchId: string, homeScore: number, awayScore: number) {
+  const { data: match } = await supabase
+    .from("matches")
+    .select("home_team, away_team, competition_id")
+    .eq("id", matchId)
+    .single()
+  if (!match) return
+
+  // Get all unique members across all pronos in this competition
+  const { data: pronos } = await supabase
+    .from("pronos")
+    .select("id")
+    .eq("competition_id", match.competition_id)
+  if (!pronos?.length) return
+
+  const { data: members } = await supabase
+    .from("prono_members")
+    .select("user_id, predictions!inner(points_earned, match_id)")
+    .in("prono_id", pronos.map((p: any) => p.id))
+    .eq("predictions.match_id", matchId)
+
+  const uniqueUserIds = [...new Set((members ?? []).map((m: any) => m.user_id))] as string[]
+  if (!uniqueUserIds.length) return
+
+  // Get individual points per user
+  const { data: preds } = await supabase
+    .from("predictions")
+    .select("user_id, points_earned")
+    .eq("match_id", matchId)
+    .in("user_id", uniqueUserIds)
+
+  const ptsByUser = new Map((preds ?? []).map((p: any) => [p.user_id, p.points_earned ?? 0]))
+
+  await sendPushToUsers(uniqueUserIds, {
+    title: `${match.home_team} ${homeScore} - ${awayScore} ${match.away_team}`,
+    body: "Resultado cargado. ¡Mirá cuántos puntos sumaste!",
+    url: `/pronos`,
+  })
 }
 
 async function takeSnapshots(supabase: any, matchId: string) {

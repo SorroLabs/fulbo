@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { sendPushToUser } from "@/lib/notifications"
 
 export async function createProno({
   competitionId,
@@ -82,8 +83,19 @@ export async function joinProno({ pronoId, referrerId }: { pronoId: string; refe
     }
   }
 
+  // Notify prono owner
+  if (prono.owner_id !== user.id) {
+    const { data: joinerProfile } = await supabase.from("profiles").select("full_name, nickname").eq("id", user.id).single()
+    const name = joinerProfile?.nickname ? `@${joinerProfile.nickname}` : (joinerProfile?.full_name ?? "Alguien")
+    sendPushToUser(prono.owner_id, {
+      title: `¡Nuevo miembro en ${prono.name}!`,
+      body: `${name} se unió a tu prono.`,
+      url: `/pronos/${prono.invite_code}`,
+    }).catch(() => {})
+  }
+
   revalidatePath("/pronos")
-  revalidatePath(`/pronos/${pronoId}`)
+  revalidatePath(`/pronos/${prono.invite_code}`)
   return { success: true }
 }
 

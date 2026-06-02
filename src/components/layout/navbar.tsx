@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "./theme-toggle"
+import { PushNotificationsToggle } from "./push-notifications"
 import { createClient } from "@/lib/supabase/client"
 import type { Profile } from "@/types"
 
@@ -27,9 +28,10 @@ const NAV_LINKS = [
 
 interface NavbarProps {
   profile: Profile | null
+  pushEndpoint: string | null
 }
 
-export function Navbar({ profile }: NavbarProps) {
+export function Navbar({ profile, pushEndpoint }: NavbarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -80,6 +82,7 @@ export function Navbar({ profile }: NavbarProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          {profile && <PushNotificationsToggle initialEndpoint={pushEndpoint} />}
           <ThemeToggle />
 
           {/* User menu */}

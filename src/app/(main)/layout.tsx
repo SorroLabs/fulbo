@@ -9,9 +9,14 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   const { data: { user } } = await supabase.auth.getUser()
 
   let profile: Profile | null = null
+  let pushEndpoint: string | null = null
   if (user) {
-    const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single()
-    profile = data
+    const [{ data: profileData }, { data: pushSub }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("push_subscriptions").select("endpoint").eq("user_id", user.id).limit(1).maybeSingle(),
+    ])
+    profile = profileData
+    pushEndpoint = pushSub?.endpoint ?? null
   }
 
   // Force profile setup if no nickname
@@ -23,7 +28,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar profile={profile} />
+      <Navbar profile={profile} pushEndpoint={pushEndpoint} />
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         {children}
       </main>
