@@ -192,7 +192,7 @@ export const SPECIAL_PREDICTION_POINTS = {
 }
 
 export const POWER_UP_COSTS: Record<PowerUpType, number> = {
-  late_change: 20,
+  late_change: 5,
   double_points: 15,
   spy: 15,
   wildcard: 25,
@@ -206,7 +206,7 @@ export const POWER_UP_LABELS: Record<PowerUpType, string> = {
 }
 
 export const POWER_UP_DESCRIPTIONS: Record<PowerUpType, string> = {
-  late_change: "Extiende el plazo de tu predicción hasta 2 minutos antes del partido (máx. 3 por torneo).",
+  late_change: "Extiende el plazo de tu predicción hasta 2 minutos antes del partido (máx. 8 por torneo).",
   double_points: "Duplica tus puntos si aciertas el resultado.",
   spy: "Mira la predicción de un rival antes de que cierre el plazo.",
   wildcard: "Si fallas el resultado, igual ganas 1 punto.",

@@ -10,7 +10,7 @@ import { MatchCard } from "@/components/competition/match-card"
 import { MatchListRow } from "@/components/competition/match-list-row"
 import { MatchFilterBar } from "@/components/competition/match-filter-bar"
 import { PowerUpModal } from "@/components/prono/power-up-modal"
-import { Eye, EyeOff, LayoutGrid, List, TrendingUp, TrendingDown, Minus, Zap, Shield } from "lucide-react"
+import { Eye, EyeOff, LayoutGrid, List, TrendingUp, TrendingDown, Minus, Zap, Shield, Clock } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
 import {
@@ -210,6 +210,13 @@ interface Member {
   profiles: { full_name: string | null; nickname: string | null; avatar_url: string | null } | null
 }
 
+const POWER_UP_ICONS: Record<string, { icon: typeof Shield; color: string }> = {
+  late_change: { icon: Clock, color: "text-blue-500" },
+  double_points: { icon: Zap, color: "text-yellow-500" },
+  spy: { icon: Eye, color: "text-purple-500" },
+  wildcard: { icon: Shield, color: "text-emerald-500" },
+}
+
 interface Props {
   matches: Match[]
   members: Member[]
@@ -219,6 +226,7 @@ interface Props {
   powerUpsEnabled?: boolean
   coinsInProno?: number
   myPowerUps?: PowerUpUse[]
+  allPowerUps?: PowerUpUse[]
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -245,7 +253,7 @@ function TeamFlag({ name }: { name: string }) {
   return <img src={src} alt={name} className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
 }
 
-export function PronoMatchesTab({ matches, members, predictions, userId, pronoId, powerUpsEnabled, coinsInProno = 0, myPowerUps = [] }: Props) {
+export function PronoMatchesTab({ matches, members, predictions, userId, pronoId, powerUpsEnabled, coinsInProno = 0, myPowerUps = [], allPowerUps = [] }: Props) {
   const router = useRouter()
   const [selected, setSelected] = useState<Match | null>(null)
   const [powerUpMatch, setPowerUpMatch] = useState<Match | null>(null)
@@ -359,6 +367,17 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
   }, [byPhase.groups, matchdays])
 
   const selectedPreds = selected ? predMap.get(selected.id) : null
+
+  const selectedPowerUpsByUser = useMemo(() => {
+    if (!selected) return new Map<string, Set<string>>()
+    const map = new Map<string, Set<string>>()
+    for (const pu of allPowerUps) {
+      if (pu.match_id !== selected.id) continue
+      if (!map.has(pu.user_id)) map.set(pu.user_id, new Set())
+      map.get(pu.user_id)!.add(pu.type)
+    }
+    return map
+  }, [allPowerUps, selected])
 
   // Current ranking derived from members (already sorted by total_points desc)
   const currentRanking = useMemo(() =>
@@ -513,6 +532,21 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
               <div className="w-32 shrink-0" />
               <div className="flex-1 flex items-center justify-center text-sm font-semibold text-center leading-tight" style={{ minHeight: "2.5em" }}>{match.away_team}</div>
             </div>
+            {myPred && (
+              <div className="mt-2 flex items-center justify-between bg-muted/50 rounded-lg px-3 py-1.5">
+                <span className="text-xs text-muted-foreground">
+                  Tu pronóstico: <span className="font-bold text-foreground">{myPred.home_score} - {myPred.away_score}</span>
+                </span>
+                {myPred.points_earned !== null && (
+                  <span className={cn(
+                    "text-xs font-black",
+                    myPred.points_earned > 0 ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    +{myPred.points_earned} pts
+                  </span>
+                )}
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between" style={{ minHeight: 36 }}>
               {canUsePowerUps ? (
                 <button
@@ -680,15 +714,28 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                         <AvatarImage src={member.profiles?.avatar_url ?? undefined} />
                         <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
                       </Avatar>
-                      <span className="flex-1 text-sm font-medium truncate flex items-center gap-1">
-                        {displayName}{isMe && " (vos)"}
-                        {pred && pred.points_earned !== null && (() => {
-                          const basePts = selected?.status === "finished" && selected.home_score != null && selected.away_score != null
-                            ? calcScenarioPts(pred.home_score, pred.away_score, selected.home_score, selected.away_score, selected.phase)
-                            : pred.points_earned
-                          return basePts === 0 && pred.points_earned > 0
-                            ? <Shield className="h-3 w-3 shrink-0 text-emerald-500" />
-                            : null
+                      <span className="flex-1 text-sm font-medium truncate flex items-center gap-1 min-w-0">
+                        <span className="truncate">{displayName}{isMe && " (vos)"}</span>
+                        {(() => {
+                          const userPus = selectedPowerUpsByUser.get(member.user_id) ?? new Set<string>()
+                          const icons: React.ReactNode[] = []
+                          // Show wildcard only if it actually fired (base pts = 0 but earned > 0)
+                          if (userPus.has("wildcard") && pred && pred.points_earned !== null) {
+                            const basePts = selected?.status === "finished" && selected.home_score != null && selected.away_score != null
+                              ? calcScenarioPts(pred.home_score, pred.away_score, selected.home_score, selected.away_score, selected.phase)
+                              : pred.points_earned
+                            if (basePts === 0 && pred.points_earned > 0) {
+                              const { icon: Icon, color } = POWER_UP_ICONS.wildcard
+                              icons.push(<Icon key="wildcard" className={`h-3 w-3 shrink-0 ${color}`} />)
+                            }
+                          }
+                          for (const type of ["late_change", "double_points", "spy"] as const) {
+                            if (userPus.has(type)) {
+                              const { icon: Icon, color } = POWER_UP_ICONS[type]
+                              icons.push(<Icon key={type} className={`h-3 w-3 shrink-0 ${color}`} />)
+                            }
+                          }
+                          return icons
                         })()}
                       </span>
                       {pred ? (

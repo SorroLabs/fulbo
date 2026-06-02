@@ -86,8 +86,19 @@ export async function activatePowerUp({
 
   if (existing) return { error: "Ya activaste este power-up para este partido" }
 
-  // late_change: max 3 per prono
+  // late_change: blocked if spy already active for this match (spy includes late_change benefit)
   if (type === "late_change") {
+    const { data: spyUse } = await supabase
+      .from("power_up_uses")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("prono_id", pronoId)
+      .eq("match_id", matchId)
+      .eq("type", "spy")
+      .maybeSingle()
+
+    if (spyUse) return { error: "Ya tienes Espía activo, que incluye el beneficio del Cambio tardío" }
+
     const { count } = await supabase
       .from("power_up_uses")
       .select("id", { count: "exact", head: true })
@@ -95,7 +106,7 @@ export async function activatePowerUp({
       .eq("prono_id", pronoId)
       .eq("type", "late_change")
 
-    if ((count ?? 0) >= 3) return { error: "Ya usaste el máximo de cambios tardíos en este prono (3)" }
+    if ((count ?? 0) >= 8) return { error: "Ya usaste el máximo de cambios tardíos en este prono (8)" }
   }
 
   // spy: target_user_id required and must be a prono member

@@ -21,11 +21,11 @@ const POWER_UPS = [
   {
     icon: Clock,
     name: "Cambio tardío",
-    cost: 20,
+    cost: 5,
     color: "text-blue-500",
     bg: "bg-blue-500/10",
     description: "Edita tu predicción hasta 2 minutos antes del partido, incluso cuando ya está bloqueada.",
-    detail: "Perfecto para esperar las alineaciones confirmadas antes de pronosticar.",
+    detail: "Perfecto para esperar las alineaciones confirmadas. Máximo 8 por torneo.",
   },
   {
     icon: Zap,

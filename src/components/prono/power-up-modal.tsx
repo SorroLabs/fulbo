@@ -53,8 +53,15 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
     onClose()
   }
 
+  function isDisabled(type: PowerUpType) {
+    if (activeTypes.has(type)) return true
+    if (coinsInProno < POWER_UP_COSTS[type]) return true
+    if (type === "late_change" && activeTypes.has("spy")) return true
+    return false
+  }
+
   function handleSelect(type: PowerUpType) {
-    if (activeTypes.has(type) || coinsInProno < POWER_UP_COSTS[type]) return
+    if (isDisabled(type)) return
     setSelected(prev => prev === type ? null : type)
     if (type !== "spy") setTargetUserId(null)
   }
@@ -82,8 +89,7 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
 
   const canConfirm =
     selected !== null &&
-    !activeTypes.has(selected) &&
-    coinsInProno >= POWER_UP_COSTS[selected] &&
+    !isDisabled(selected) &&
     (selected !== "spy" || targetUserId !== null)
 
   return (
@@ -108,18 +114,21 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
             const isActive = activeTypes.has(type)
             const canAfford = coinsInProno >= cost
             const isSelected = selected === type
+            const blockedBySpy = type === "late_change" && activeTypes.has("spy")
+            const disabled = isDisabled(type)
 
             return (
               <div key={type}>
                 <button
                   onClick={() => handleSelect(type)}
-                  disabled={isActive || !canAfford || isPending}
+                  disabled={disabled || isPending}
                   className={cn(
                     "w-full text-left rounded-xl border p-3 transition-all",
                     isActive && "border-primary/30 bg-primary/5 cursor-default",
-                    !isActive && canAfford && !isSelected && "border-border hover:border-primary/30",
-                    !isActive && canAfford && isSelected && "border-primary bg-primary/5 ring-1 ring-primary/20",
-                    !isActive && !canAfford && "opacity-40 cursor-not-allowed border-border",
+                    blockedBySpy && "opacity-40 cursor-not-allowed border-border",
+                    !disabled && !isSelected && "border-border hover:border-primary/30",
+                    !disabled && isSelected && "border-primary bg-primary/5 ring-1 ring-primary/20",
+                    !isActive && !blockedBySpy && !canAfford && "opacity-40 cursor-not-allowed border-border",
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -139,7 +148,7 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                        {POWER_UP_DESCRIPTIONS[type]}
+                        {blockedBySpy ? "Ya incluido en el Espía activo." : POWER_UP_DESCRIPTIONS[type]}
                       </p>
                     </div>
                   </div>
