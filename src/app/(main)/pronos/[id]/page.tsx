@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus, Star } from "lucide-react"
+import { Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus, Star } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
 import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
@@ -207,9 +207,6 @@ export default async function PollaDetailPage({ params, searchParams }: { params
               <Coins className="h-4 w-4" /> Monedas
             </TabsTrigger>
           )}
-          <TabsTrigger value="members" className="rounded-full gap-2">
-            <Users className="h-4 w-4" /> Miembros
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="matches" className="mt-6 data-[hidden]:hidden" keepMounted>
@@ -330,7 +327,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
           />
         </TabsContent>
 
-        <TabsContent value="members" className="mt-6">
+        <TabsContent value="members-removed" className="mt-6">
           <Card>
             <CardContent className="pt-4 divide-y divide-border/50">
               {membersWithLivePoints.map((member: any) => {
