@@ -16,6 +16,47 @@ import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Match } from "@/types"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: prono } = await supabase
+    .from("pronos")
+    .select("name, description, competitions(name, season), prono_members(count)")
+    .eq("invite_code", id.toUpperCase())
+    .single()
+
+  if (!prono) return { title: "fulbo.io" }
+
+  const memberCount = (prono.prono_members as any)?.[0]?.count ?? 0
+  const competition = (prono.competitions as any)
+  const title = `${prono.name} — fulbo.io`
+  const description = prono.description
+    ? `${prono.description} · ${memberCount} participante${memberCount !== 1 ? "s" : ""} · ${competition?.name ?? ""} ${competition?.season ?? ""}`
+    : `¡Unite a "${prono.name}"! Ya somos ${memberCount} participante${memberCount !== 1 ? "s" : ""} prediciendo el ${competition?.name ?? "Mundial 2026"}.`
+
+  const BASE_URL = "https://fulbo.io"
+  const url = `${BASE_URL}/pronos/${id.toUpperCase()}`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "fulbo.io",
+      type: "website",
+      locale: "es_419",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  }
+}
 
 export default async function PollaDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ref?: string }> }) {
   const { id } = await params
