@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
 import { sendPushToUser } from "@/lib/notifications"
 
@@ -164,7 +165,8 @@ export async function toggleCoAdmin({ pronoId, userId, makeAdmin }: { pronoId: s
   if (!prono || prono.owner_id !== user.id) return { error: "Solo el fundador puede gestionar co-admins" }
   if (userId === user.id) return { error: "No puedes cambiarte el rol a ti mismo" }
 
-  const { error } = await supabase
+  const service = createServiceClient()
+  const { error } = await service
     .from("prono_members")
     .update({ role: makeAdmin ? "admin" : "member" })
     .eq("prono_id", pronoId)
@@ -188,7 +190,8 @@ export async function toggleMemberActive({ pronoId, userId, isActive }: { pronoI
   if (!canManage) return { error: "Sin permisos" }
   if (userId === user.id) return { error: "No puedes desactivarte a ti mismo" }
 
-  const { error } = await supabase
+  const service = createServiceClient()
+  const { error } = await service
     .from("prono_members")
     .update({ is_active: isActive })
     .eq("prono_id", pronoId)
