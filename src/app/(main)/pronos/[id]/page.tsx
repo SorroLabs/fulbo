@@ -298,7 +298,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
                         {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : currentRank}
                       </span>
                       {rankDelta !== null && rankDelta !== 0 && (
-                        <span className={`flex items-center text-[10px] font-bold leading-none ${rankDelta > 0 ? "text-emerald-500" : "text-red-500"}`}>
+                        <span className={`flex items-center text-[11px] font-bold leading-none ${rankDelta > 0 ? "text-emerald-500" : "text-red-500"}`}>
                           {rankDelta > 0
                             ? <><TrendingUp className="h-2.5 w-2.5" />+{rankDelta}</>
                             : <><TrendingDown className="h-2.5 w-2.5" />{rankDelta}</>}
