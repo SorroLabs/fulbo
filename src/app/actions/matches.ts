@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
 import { sendPushToUsers } from "@/lib/notifications"
 
@@ -99,7 +100,7 @@ export async function revertMatchResult({ matchId }: { matchId: string }) {
 
   if (error) return { error: error.message }
 
-  await supabase.from("leaderboard_snapshots").delete().eq("match_id", matchId)
+  await createServiceClient().from("leaderboard_snapshots").delete().eq("match_id", matchId)
 
   revalidatePath("/admin")
   revalidatePath("/", "layout")
@@ -128,7 +129,8 @@ export async function reportMatchResult({
 
   await supabase.rpc("score_match", { p_match_id: matchId })
 
-  await takeSnapshots(supabase, matchId)
+  const service = createServiceClient()
+  await takeSnapshots(service, matchId)
   await awardPhaseBonus(supabase, matchId)
   await awardMatchdayWinner(supabase, matchId)
   await autoScoreChampion(supabase, matchId, homeScore, awayScore)
