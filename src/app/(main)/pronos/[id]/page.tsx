@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus, Star } from "lucide-react"
+import { Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus, Star, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
 import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
@@ -82,7 +82,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
 
   const memberIds = (members ?? []).map((m: any) => m.user_id)
 
-  const [{ data: matches }, { data: allPredictions }, { data: myPowerUps }, { data: allPowerUps }, { data: myMembership }, { data: myTransactions }, { data: mySpecials }] = await Promise.all([
+  const [{ data: matches }, { data: allPredictions }, { data: myPowerUps }, { data: allPowerUps }, { data: myMembership }, { data: myTransactions }, { data: mySpecials }, { data: lastSnapshot }] = await Promise.all([
     supabase.from("matches").select("*").eq("competition_id", prono.competition_id)
       .not("home_team", "like", "Ganador%")
       .order("match_date"),
@@ -104,6 +104,12 @@ export default async function PollaDetailPage({ params, searchParams }: { params
     user
       ? supabase.from("special_predictions").select("*").eq("user_id", user.id).eq("competition_id", prono.competition_id)
       : { data: [] },
+    supabase.from("leaderboard_snapshots")
+      .select("snapshot_data")
+      .eq("prono_id", prono.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   // Calculate total_points on-the-fly from predictions so the leaderboard
@@ -118,6 +124,11 @@ export default async function PollaDetailPage({ params, searchParams }: { params
     .filter((m: any) => m.is_active !== false)
     .map((m: any) => ({ ...m, total_points: pointsByUser.get(m.user_id) ?? 0 }))
     .sort((a: any, b: any) => b.total_points - a.total_points)
+
+  // Previous rank map from last snapshot
+  const prevRankMap = new Map<string, number>(
+    ((lastSnapshot as any)?.snapshot_data ?? []).map((e: any) => [e.user_id, e.rank])
+  )
 
   const allMembersForAdmin = (members ?? [])
     .map((m: any) => ({ user_id: m.user_id, is_active: m.is_active !== false, role: m.role ?? "member", profiles: m.profiles }))
@@ -276,12 +287,27 @@ export default async function PollaDetailPage({ params, searchParams }: { params
                 }
 
                 const efectividad = maxPts > 0 ? Math.round((member.total_points / maxPts) * 100) : null
+                const currentRank = i + 1
+                const prevRank = prevRankMap.get(member.user_id)
+                const rankDelta = prevRank != null ? prevRank - currentRank : null
 
                 return (
                   <div key={member.id} className={`flex items-center gap-3 py-3 ${isMe ? "text-primary" : ""}`}>
-                    <span className={`w-6 text-center font-black text-base shrink-0 ${i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}>
-                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
-                    </span>
+                    <div className="w-6 shrink-0 flex flex-col items-center">
+                      <span className={`font-black text-base ${i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}>
+                        {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : currentRank}
+                      </span>
+                      {rankDelta !== null && rankDelta !== 0 && (
+                        <span className={`flex items-center text-[10px] font-bold leading-none ${rankDelta > 0 ? "text-emerald-500" : "text-red-500"}`}>
+                          {rankDelta > 0
+                            ? <><TrendingUp className="h-2.5 w-2.5" />+{rankDelta}</>
+                            : <><TrendingDown className="h-2.5 w-2.5" />{rankDelta}</>}
+                        </span>
+                      )}
+                      {rankDelta === 0 && prevRank != null && (
+                        <Minus className="h-2.5 w-2.5 text-muted-foreground/40" />
+                      )}
+                    </div>
                     <Avatar className="h-9 w-9 shrink-0">
                       <AvatarImage src={member.profiles?.avatar_url} />
                       <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
