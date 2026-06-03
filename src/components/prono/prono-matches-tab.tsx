@@ -207,6 +207,7 @@ function ScenarioCalculator({ match, members, preds, currentRanking, userId, all
 
 interface Member {
   user_id: string
+  total_points?: number
   profiles: { full_name: string | null; nickname: string | null; avatar_url: string | null } | null
 }
 

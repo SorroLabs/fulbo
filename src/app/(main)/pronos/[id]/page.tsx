@@ -230,7 +230,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
         <TabsContent value="matches" className="mt-6 data-[hidden]:hidden" keepMounted>
           <PronoMatchesTab
             matches={(matches as Match[]) ?? []}
-            members={membersWithLivePoints.map((m: any) => ({ user_id: m.user_id, profiles: m.profiles }))}
+            members={membersWithLivePoints.map((m: any) => ({ user_id: m.user_id, profiles: m.profiles, total_points: m.total_points ?? 0 }))}
             predictions={allPredictions ?? []}
             userId={user?.id ?? null}
             pronoId={prono.id}
