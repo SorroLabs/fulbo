@@ -108,7 +108,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       .select("snapshot_data")
       .eq("prono_id", prono.id)
       .order("created_at", { ascending: false })
-      .limit(1)
+      .range(1, 1)
       .maybeSingle(),
   ])
 
