@@ -41,7 +41,7 @@ export async function activatePowerUp({
   // Fetch match
   const { data: match } = await supabase
     .from("matches")
-    .select("id, match_date, status, competition_id")
+    .select("id, match_date, status, competition_id, phase")
     .eq("id", matchId)
     .single()
 
@@ -73,6 +73,41 @@ export async function activatePowerUp({
   const cost = config?.cost ?? POWER_UP_COSTS[type]
 
   if (member.coins_in_prono < cost) return { error: "No tienes suficientes monedas" }
+
+  // Wildcard phase restrictions
+  if (type === "wildcard") {
+    const disabledPhases = ["semifinals", "third_place", "final"]
+    const limitedPhases = ["round_of_32", "round_of_16", "quarterfinals"]
+
+    if (disabledPhases.includes(match.phase)) {
+      return { error: "El Comodín no está disponible en esta fase del torneo" }
+    }
+
+    if (limitedPhases.includes(match.phase)) {
+      // Fetch all matches in this phase to count wildcards used by this user
+      const { data: phaseMatchIds } = await supabase
+        .from("matches")
+        .select("id")
+        .eq("competition_id", match.competition_id)
+        .eq("phase", match.phase)
+
+      const ids = (phaseMatchIds ?? []).map((m: { id: string }) => m.id)
+
+      if (ids.length > 0) {
+        const { count } = await supabase
+          .from("power_up_uses")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("prono_id", pronoId)
+          .eq("type", "wildcard")
+          .in("match_id", ids)
+
+        if ((count ?? 0) >= 1) {
+          return { error: "Ya usaste el Comodín en esta fase. Solo se permite 1 por ronda eliminatoria." }
+        }
+      }
+    }
+  }
 
   // Check already activated for this match
   const { data: existing } = await supabase

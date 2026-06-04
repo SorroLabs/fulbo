@@ -26,6 +26,9 @@ interface Member {
   profiles: { full_name: string | null; nickname: string | null; avatar_url: string | null } | null
 }
 
+const WILDCARD_DISABLED_PHASES = ["semifinals", "third_place", "final"]
+const WILDCARD_LIMITED_PHASES = ["round_of_32", "round_of_16", "quarterfinals"]
+
 interface Props {
   open: boolean
   onClose: () => void
@@ -35,10 +38,11 @@ interface Props {
   myPowerUps: PowerUpUse[]
   members: Member[]
   userId: string
+  wildcardsByPhase: Record<string, number>
   onSuccess: () => void
 }
 
-export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPowerUps, members, userId, onSuccess }: Props) {
+export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPowerUps, members, userId, wildcardsByPhase, onSuccess }: Props) {
   const [selected, setSelected] = useState<PowerUpType | null>(null)
   const [targetUserId, setTargetUserId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -53,10 +57,18 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
     onClose()
   }
 
+  function wildcardBlockReason(): string | null {
+    const phase = match.phase
+    if (WILDCARD_DISABLED_PHASES.includes(phase)) return "No disponible en esta fase del torneo."
+    if (WILDCARD_LIMITED_PHASES.includes(phase) && (wildcardsByPhase[phase] ?? 0) >= 1) return "Ya usaste el Comodín en esta fase (máx. 1 por ronda)."
+    return null
+  }
+
   function isDisabled(type: PowerUpType) {
     if (activeTypes.has(type)) return true
     if (coinsInProno < POWER_UP_COSTS[type]) return true
     if (type === "late_change" && activeTypes.has("spy")) return true
+    if (type === "wildcard" && wildcardBlockReason() !== null) return true
     return false
   }
 
@@ -115,6 +127,7 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
             const canAfford = coinsInProno >= cost
             const isSelected = selected === type
             const blockedBySpy = type === "late_change" && activeTypes.has("spy")
+            const blockedWildcard = type === "wildcard" ? wildcardBlockReason() : null
             const disabled = isDisabled(type)
 
             return (
@@ -125,10 +138,10 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
                   className={cn(
                     "w-full text-left rounded-xl border p-3 transition-all",
                     isActive && "border-primary/30 bg-primary/5 cursor-default",
-                    blockedBySpy && "opacity-40 cursor-not-allowed border-border",
+                    (blockedBySpy || blockedWildcard) && "opacity-40 cursor-not-allowed border-border",
                     !disabled && !isSelected && "border-border hover:border-primary/30",
                     !disabled && isSelected && "border-primary bg-primary/5 ring-1 ring-primary/20",
-                    !isActive && !blockedBySpy && !canAfford && "opacity-40 cursor-not-allowed border-border",
+                    !isActive && !blockedBySpy && !blockedWildcard && !canAfford && "opacity-40 cursor-not-allowed border-border",
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -148,7 +161,7 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                        {blockedBySpy ? "Ya incluido en el Espía activo." : POWER_UP_DESCRIPTIONS[type]}
+                        {blockedBySpy ? "Ya incluido en el Espía activo." : blockedWildcard ?? POWER_UP_DESCRIPTIONS[type]}
                       </p>
                     </div>
                   </div>

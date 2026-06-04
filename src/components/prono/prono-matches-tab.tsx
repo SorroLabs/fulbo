@@ -273,6 +273,19 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     setPredOverrides(prev => { const m = new Map(prev); m.delete(matchId); return m })
   }
 
+  // Wildcard uses per phase (for the current user)
+  const wildcardsByPhase = useMemo(() => {
+    const matchPhaseMap = new Map(matches.map(m => [m.id, m.phase]))
+    const counts: Record<string, number> = {}
+    for (const pu of myPowerUps) {
+      if (pu.type !== "wildcard") continue
+      const phase = matchPhaseMap.get(pu.match_id)
+      if (!phase) continue
+      counts[phase] = (counts[phase] ?? 0) + 1
+    }
+    return counts
+  }, [myPowerUps, matches])
+
   // Power-up maps
   const myPowerUpsByMatch = useMemo(() => {
     const map = new Map<string, Set<string>>()
@@ -662,6 +675,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
           myPowerUps={myPowerUps.filter(p => p.match_id === powerUpMatch.id)}
           members={members}
           userId={userId}
+          wildcardsByPhase={wildcardsByPhase}
           onSuccess={() => router.refresh()}
         />
       )}
