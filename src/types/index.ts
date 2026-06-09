@@ -193,7 +193,7 @@ export const SPECIAL_PREDICTION_POINTS = {
 
 export const POWER_UP_COSTS: Record<PowerUpType, number> = {
   late_change: 5,
-  double_points: 15,
+  double_points: 40,
   spy: 15,
   wildcard: 25,
 }
