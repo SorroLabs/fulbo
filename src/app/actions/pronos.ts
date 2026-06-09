@@ -216,7 +216,8 @@ export async function removeMember({ pronoId, userId }: { pronoId: string; userI
   if (userId === user.id) return { error: "No puedes removerte a ti mismo" }
   if (userId === prono?.owner_id) return { error: "No puedes eliminar al fundador" }
 
-  const { error } = await supabase
+  const service = createServiceClient()
+  const { error } = await service
     .from("prono_members")
     .delete()
     .eq("prono_id", pronoId)
