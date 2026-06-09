@@ -57,6 +57,10 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
     onClose()
   }
 
+  const wildcardDesc = match.phase === "groups"
+    ? "Si tu predicción falla, igual ganas 5 puntos."
+    : "Si tu predicción falla, igual ganas 10 puntos."
+
   function wildcardBlockReason(): string | null {
     const phase = match.phase
     if (WILDCARD_DISABLED_PHASES.includes(phase)) return "No disponible en esta fase del torneo."
@@ -161,7 +165,7 @@ export function PowerUpModal({ open, onClose, match, pronoId, coinsInProno, myPo
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                        {blockedBySpy ? "Ya incluido en el Espía activo." : blockedWildcard ?? POWER_UP_DESCRIPTIONS[type]}
+                        {blockedBySpy ? "Ya incluido en el Espía activo." : blockedWildcard ?? (type === "wildcard" ? wildcardDesc : POWER_UP_DESCRIPTIONS[type])}
                       </p>
                     </div>
                   </div>

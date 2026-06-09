@@ -30,7 +30,7 @@ const POWER_UPS = [
   {
     icon: Zap,
     name: "Doble puntos",
-    cost: 15,
+    cost: 40,
     color: "text-yellow-500",
     bg: "bg-yellow-500/10",
     description: "Duplica los puntos que ganes en un partido específico.",
@@ -48,7 +48,7 @@ const POWER_UPS = [
   {
     icon: Shield,
     name: "Comodín",
-    cost: 25,
+    cost: 35,
     color: "text-emerald-500",
     bg: "bg-emerald-500/10",
     description: "Si tu predicción no suma ningún punto, el comodín te regala 5 pts (grupos) o 10 pts (eliminatoria).",
