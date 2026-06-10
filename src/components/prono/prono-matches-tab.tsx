@@ -520,6 +520,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       if (guidedIndex >= guidedMatchList.length - 1) {
         setShowGuidedFill(false)
         toast.success("¡Predicciones completadas!")
+        router.refresh()
       } else {
         setGuidedIndex(i => i + 1)
         setGuidedHome("")
@@ -1034,7 +1035,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                 </div>
 
                 <DialogFooter className="gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setShowGuidedFill(false)}>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowGuidedFill(false); router.refresh() }}>
                     Salir
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleGuidedSkip} disabled={isSavingGuided}>
