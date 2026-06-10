@@ -780,7 +780,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
             </Button>
             <Button variant="outline" size="sm" onClick={openGuidedFill} className="gap-1.5 text-xs">
               <ListChecks className="h-3.5 w-3.5" />
-              Paso a paso
+              Llenado paso a paso
             </Button>
           </div>
         )}
@@ -984,12 +984,18 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
                 </div>
 
                 {/* Match info */}
-                <div className="text-center space-y-1">
+                <div className="text-center space-y-2">
                   <p className="text-xs text-muted-foreground">{dateStr}</p>
-                  <div className="flex items-center justify-center gap-2 font-bold text-sm">
-                    <span>{currentMatch.home_team}</span>
-                    <span className="text-muted-foreground">vs</span>
-                    <span>{currentMatch.away_team}</span>
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="flex flex-col items-center gap-1">
+                      <TeamFlag name={currentMatch.home_team} />
+                      <span className="text-xs font-semibold text-center leading-tight max-w-[72px]">{currentMatch.home_team}</span>
+                    </div>
+                    <span className="text-muted-foreground font-bold text-sm">vs</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <TeamFlag name={currentMatch.away_team} />
+                      <span className="text-xs font-semibold text-center leading-tight max-w-[72px]">{currentMatch.away_team}</span>
+                    </div>
                   </div>
                 </div>
 
