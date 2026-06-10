@@ -111,8 +111,8 @@ export async function fillRandomPredictions({
       match_id: match.id,
       competition_id: match.competition_id,
       prono_id: pronoId,
-      home_score: Math.floor(Math.random() * 5),
-      away_score: Math.floor(Math.random() * 5),
+      home_score: Math.floor(Math.random() * 6),
+      away_score: Math.floor(Math.random() * 6),
       is_auto: true,
       updated_at: new Date().toISOString(),
     })
