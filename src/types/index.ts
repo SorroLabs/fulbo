@@ -85,6 +85,7 @@ export interface Prediction {
   away_score: number
   points_earned: number | null
   is_locked: boolean
+  is_auto: boolean | null
   created_at: string
   updated_at: string
   match?: Match

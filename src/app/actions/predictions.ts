@@ -10,6 +10,7 @@ export async function savePrediction({
   pronoId,
   homeScore,
   awayScore,
+  isAuto,
 }: {
   userId: string
   matchId: string
@@ -17,6 +18,7 @@ export async function savePrediction({
   pronoId: string
   homeScore: number
   awayScore: number
+  isAuto?: boolean
 }) {
   const supabase = await createClient()
 
@@ -55,11 +57,77 @@ export async function savePrediction({
     home_score: homeScore,
     away_score: awayScore,
     updated_at: new Date().toISOString(),
+    ...(isAuto !== undefined ? { is_auto: isAuto } : {}),
   }, { onConflict: "user_id,prono_id,match_id" })
 
   if (error) return { error: "Error al guardar la predicción" }
   revalidatePath(`/pronos`)
   return { success: true }
+}
+
+export async function fillRandomPredictions({
+  userId,
+  pronoId,
+  matchIds,
+}: {
+  userId: string
+  pronoId: string
+  matchIds: string[]
+}): Promise<{ filled: number; skipped: number; error?: string }> {
+  const supabase = await createClient()
+
+  const [{ data: matchesData }, { data: existingPreds }] = await Promise.all([
+    supabase
+      .from("matches")
+      .select("id, status, match_date, competition_id")
+      .in("id", matchIds),
+    supabase
+      .from("predictions")
+      .select("match_id")
+      .eq("user_id", userId)
+      .eq("prono_id", pronoId)
+      .in("match_id", matchIds),
+  ])
+
+  if (!matchesData) return { filled: 0, skipped: matchIds.length }
+
+  const existingMatchIds = new Set((existingPreds ?? []).map((p: { match_id: string }) => p.match_id))
+  const now = new Date()
+  const rows: Array<{
+    user_id: string; match_id: string; competition_id: string; prono_id: string
+    home_score: number; away_score: number; is_auto: boolean; updated_at: string
+  }> = []
+  let skipped = 0
+
+  for (const match of matchesData) {
+    if (existingMatchIds.has(match.id)) { skipped++; continue }
+    if (match.status !== "upcoming") { skipped++; continue }
+    const deadline = new Date(match.match_date)
+    deadline.setMinutes(deadline.getMinutes() - 20)
+    if (now > deadline) { skipped++; continue }
+
+    rows.push({
+      user_id: userId,
+      match_id: match.id,
+      competition_id: match.competition_id,
+      prono_id: pronoId,
+      home_score: Math.floor(Math.random() * 5),
+      away_score: Math.floor(Math.random() * 5),
+      is_auto: true,
+      updated_at: new Date().toISOString(),
+    })
+  }
+
+  if (rows.length === 0) return { filled: 0, skipped }
+
+  const { error } = await supabase
+    .from("predictions")
+    .upsert(rows, { onConflict: "user_id,prono_id,match_id" })
+
+  if (error) return { filled: 0, skipped: matchIds.length, error: "Error al guardar predicciones" }
+
+  revalidatePath("/pronos")
+  return { filled: rows.length, skipped }
 }
 
 export async function deletePrediction({

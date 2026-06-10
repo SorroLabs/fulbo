@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import type React from "react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -28,13 +28,16 @@ interface Props {
   onDelete?: (matchId: string) => void
   spyPrediction?: { home_score: number; away_score: number } | null
   spyTargetName?: string | null
+  homeInputRef?: (el: HTMLInputElement | null) => void
+  onAwayFilled?: () => void
 }
 
-export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave, onDelete, spyPrediction, spyTargetName }: Props) {
+export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave, onDelete, spyPrediction, spyTargetName, homeInputRef, onAwayFilled }: Props) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
   const [isPending, startTransition] = useTransition()
+  const awayRef = useRef<HTMLInputElement>(null)
 
   const isLocked = match.status !== "upcoming" || !userId
   const deadline = new Date(match.match_date)
@@ -118,7 +121,13 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
           <>
             <input
               type="text" inputMode="numeric" pattern="[0-9]*" value={home}
-              onChange={e => { setHome(e.target.value.replace(/\D/g, "").slice(0, 2)); setSaved(false) }}
+              ref={homeInputRef}
+              onChange={e => {
+                const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+                setHome(cleaned)
+                setSaved(false)
+                if (cleaned.length === 1) { awayRef.current?.focus(); awayRef.current?.select() }
+              }}
               onBlur={handleBlur}
               disabled={!canEdit}
               className="w-8 h-8 text-sm font-black rounded-lg border border-input bg-background text-foreground outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -127,7 +136,13 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
             <span className="text-muted-foreground font-bold text-xs">-</span>
             <input
               type="text" inputMode="numeric" pattern="[0-9]*" value={away}
-              onChange={e => { setAway(e.target.value.replace(/\D/g, "").slice(0, 2)); setSaved(false) }}
+              ref={awayRef}
+              onChange={e => {
+                const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+                setAway(cleaned)
+                setSaved(false)
+                if (cleaned.length === 1) onAwayFilled?.()
+              }}
               onBlur={handleBlur}
               disabled={!canEdit}
               className="w-8 h-8 text-sm font-black rounded-lg border border-input bg-background text-foreground outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"

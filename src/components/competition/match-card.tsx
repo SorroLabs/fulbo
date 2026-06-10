@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import type React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -36,13 +36,16 @@ interface MatchCardProps {
   onDelete?: (matchId: string) => void
   spyPrediction?: { home_score: number; away_score: number } | null
   spyTargetName?: string | null
+  homeInputRef?: (el: HTMLInputElement | null) => void
+  onAwayFilled?: () => void
 }
 
-export function MatchCard({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave, onDelete, spyPrediction, spyTargetName }: MatchCardProps) {
+export function MatchCard({ match, prediction, userId, pronoId, eyeIcon, onPowerUp, lateDeadline, onSave, onDelete, spyPrediction, spyTargetName, homeInputRef, onAwayFilled }: MatchCardProps) {
   const [home, setHome] = useState(prediction?.home_score?.toString() ?? "")
   const [away, setAway] = useState(prediction?.away_score?.toString() ?? "")
   const [saved, setSaved] = useState(!!prediction)
   const [isPending, startTransition] = useTransition()
+  const awayRef = useRef<HTMLInputElement>(null)
 
   const isLocked = match.status !== "upcoming" || !userId
   const deadline = new Date(match.match_date)
@@ -134,7 +137,13 @@ export function MatchCard({ match, prediction, userId, pronoId, eyeIcon, onPower
               <div className="flex items-center gap-1.5">
                 <input
                   type="text" inputMode="numeric" pattern="[0-9]*" value={home}
-                  onChange={e => { setHome(e.target.value.replace(/\D/g, "").slice(0, 2)); setSaved(false) }}
+                  ref={homeInputRef}
+                  onChange={e => {
+                    const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+                    setHome(cleaned)
+                    setSaved(false)
+                    if (cleaned.length === 1) { awayRef.current?.focus(); awayRef.current?.select() }
+                  }}
                   onBlur={handleBlur}
                   disabled={!canEdit}
                   className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-background text-foreground outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -143,7 +152,13 @@ export function MatchCard({ match, prediction, userId, pronoId, eyeIcon, onPower
                 <span className="text-muted-foreground font-bold">-</span>
                 <input
                   type="text" inputMode="numeric" pattern="[0-9]*" value={away}
-                  onChange={e => { setAway(e.target.value.replace(/\D/g, "").slice(0, 2)); setSaved(false) }}
+                  ref={awayRef}
+                  onChange={e => {
+                    const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+                    setAway(cleaned)
+                    setSaved(false)
+                    if (cleaned.length === 1) onAwayFilled?.()
+                  }}
                   onBlur={handleBlur}
                   disabled={!canEdit}
                   className="w-12 h-12 text-lg font-black rounded-xl border border-input bg-background text-foreground outline-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"

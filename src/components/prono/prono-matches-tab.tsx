@@ -1,18 +1,21 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { MatchCard } from "@/components/competition/match-card"
 import { MatchListRow } from "@/components/competition/match-list-row"
 import { MatchFilterBar } from "@/components/competition/match-filter-bar"
 import { PowerUpModal } from "@/components/prono/power-up-modal"
-import { Eye, EyeOff, LayoutGrid, List, TrendingUp, TrendingDown, Minus, Zap, Shield, Clock } from "lucide-react"
+import { savePrediction, fillRandomPredictions } from "@/app/actions/predictions"
+import { Eye, EyeOff, LayoutGrid, List, TrendingUp, TrendingDown, Minus, Zap, Shield, Clock, Shuffle, ListChecks, Loader2 } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import {
   computeMatchdays, applyFilters, getAvailableFechas, getAvailableGroups,
   EMPTY_FILTERS, type MatchFilters,
@@ -263,6 +266,23 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
   const [predOverrides, setPredOverrides] = useState<Map<string, { home: number; away: number }>>(new Map())
   const [deletedPredIds, setDeletedPredIds] = useState<Set<string>>(new Set())
 
+  // Random fill state
+  const [showRandomConfirm, setShowRandomConfirm] = useState(false)
+  const [isFillingRandom, startRandomTransition] = useTransition()
+
+  // Guided fill state
+  const [showGuidedFill, setShowGuidedFill] = useState(false)
+  const [guidedMatchList, setGuidedMatchList] = useState<Match[]>([])
+  const [guidedIndex, setGuidedIndex] = useState(0)
+  const [guidedHome, setGuidedHome] = useState("")
+  const [guidedAway, setGuidedAway] = useState("")
+  const [isSavingGuided, startGuidedTransition] = useTransition()
+  const guidedHomeRef = useRef<HTMLInputElement>(null)
+  const guidedAwayRef = useRef<HTMLInputElement>(null)
+
+  // Cross-card auto-focus refs
+  const homeRefs = useRef<Map<string, HTMLInputElement | null>>(new Map())
+
   function handlePredSaved(matchId: string, home: number, away: number) {
     setPredOverrides(prev => new Map(prev).set(matchId, { home, away }))
     setDeletedPredIds(prev => { const s = new Set(prev); s.delete(matchId); return s })
@@ -343,6 +363,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
               away_score: override.away,
               points_earned: null,
               is_locked: false,
+              is_auto: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
@@ -399,6 +420,124 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     [members]
   )
 
+  // All unpredicted open matches (for random fill + guided fill)
+  const unpredictedOpenMatches = useMemo(() =>
+    matches
+      .filter(m => m.status === "upcoming" && !myPredMap.has(m.id) && !isLocked(m, false))
+      .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime()),
+    [matches, myPredMap]
+  )
+
+  // Ordered list of all non-locked match IDs in render order (for cross-card auto-focus)
+  const openMatchIds = useMemo(() => {
+    const result: string[] = []
+    for (const phase of PHASE_ORDER) {
+      const phaseMatches = byPhase[phase] ?? []
+      if (!phaseMatches.length) continue
+      if (phase !== "groups" && phaseMatches.every(m => m.status === "upcoming")) continue
+      if (phase === "groups") {
+        const byFechaMap = new Map<number, Match[]>()
+        for (const m of phaseMatches) {
+          const f = matchdays.get(m.id) ?? 0
+          if (!byFechaMap.has(f)) byFechaMap.set(f, [])
+          byFechaMap.get(f)!.push(m)
+        }
+        for (const [, ms] of [...byFechaMap.entries()].sort(([a], [b]) => a - b)) {
+          for (const m of ms) {
+            const extended = !!(myPowerUpsByMatch.get(m.id)?.has("spy") || myPowerUpsByMatch.get(m.id)?.has("late_change"))
+            if (!isLocked(m, extended)) result.push(m.id)
+          }
+        }
+      } else {
+        for (const m of phaseMatches) {
+          const extended = !!(myPowerUpsByMatch.get(m.id)?.has("spy") || myPowerUpsByMatch.get(m.id)?.has("late_change"))
+          if (!isLocked(m, extended)) result.push(m.id)
+        }
+      }
+    }
+    return result
+  }, [byPhase, matchdays, myPowerUpsByMatch])
+
+  // Auto-focus guided fill home input when match advances
+  useEffect(() => {
+    if (showGuidedFill) {
+      const t = setTimeout(() => guidedHomeRef.current?.focus(), 50)
+      return () => clearTimeout(t)
+    }
+  }, [guidedIndex, showGuidedFill])
+
+  function handleAwayFilled(matchId: string) {
+    const idx = openMatchIds.indexOf(matchId)
+    if (idx === -1 || idx >= openMatchIds.length - 1) return
+    const nextId = openMatchIds[idx + 1]
+    homeRefs.current.get(nextId)?.focus()
+  }
+
+  function openGuidedFill() {
+    setGuidedMatchList(unpredictedOpenMatches)
+    setGuidedIndex(0)
+    setGuidedHome("")
+    setGuidedAway("")
+    setShowGuidedFill(true)
+  }
+
+  function handleRandomFill() {
+    if (!userId || !pronoId) return
+    startRandomTransition(async () => {
+      const res = await fillRandomPredictions({
+        userId,
+        pronoId,
+        matchIds: unpredictedOpenMatches.map(m => m.id),
+      })
+      setShowRandomConfirm(false)
+      if (res.error) {
+        toast.error(res.error)
+      } else {
+        toast.success(`${res.filled} predicciones generadas`)
+        router.refresh()
+      }
+    })
+  }
+
+  function handleGuidedNext() {
+    const currentMatch = guidedMatchList[guidedIndex]
+    if (!currentMatch || !userId || !pronoId || guidedHome === "" || guidedAway === "") return
+    startGuidedTransition(async () => {
+      const res = await savePrediction({
+        userId,
+        matchId: currentMatch.id,
+        competitionId: currentMatch.competition_id,
+        pronoId,
+        homeScore: parseInt(guidedHome),
+        awayScore: parseInt(guidedAway),
+        isAuto: false,
+      })
+      if (res.error) {
+        toast.error(res.error)
+        return
+      }
+      handlePredSaved(currentMatch.id, parseInt(guidedHome), parseInt(guidedAway))
+      if (guidedIndex >= guidedMatchList.length - 1) {
+        setShowGuidedFill(false)
+        toast.success("¡Predicciones completadas!")
+      } else {
+        setGuidedIndex(i => i + 1)
+        setGuidedHome("")
+        setGuidedAway("")
+      }
+    })
+  }
+
+  function handleGuidedSkip() {
+    if (guidedIndex >= guidedMatchList.length - 1) {
+      setShowGuidedFill(false)
+    } else {
+      setGuidedIndex(i => i + 1)
+      setGuidedHome("")
+      setGuidedAway("")
+    }
+  }
+
   function renderMatch(match: Match) {
     const spy = hasSpy(match.id)
     const lateChange = hasLateChange(match.id)
@@ -427,6 +566,8 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
             onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
             onSave={handlePredSaved} onDelete={handlePredDeleted}
             spyPrediction={spyPrediction} spyTargetName={spyTargetName}
+            homeInputRef={el => homeRefs.current.set(match.id, el)}
+            onAwayFilled={() => handleAwayFilled(match.id)}
           />
         )
       }
@@ -437,6 +578,8 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
           onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
           onSave={handlePredSaved} onDelete={handlePredDeleted}
           spyPrediction={spyPrediction} spyTargetName={spyTargetName}
+          homeInputRef={el => homeRefs.current.set(match.id, el)}
+          onAwayFilled={() => handleAwayFilled(match.id)}
         />
       )
     }
@@ -627,6 +770,21 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
           </div>
         </div>
 
+        {/* Fill shortcuts — only shown to logged-in members with pending predictions */}
+        {userId && pronoId && unpredictedOpenMatches.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowRandomConfirm(true)} className="gap-1.5 text-xs">
+              <Shuffle className="h-3.5 w-3.5" />
+              Llenar al azar
+              <span className="text-muted-foreground">({unpredictedOpenMatches.length})</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={openGuidedFill} className="gap-1.5 text-xs">
+              <ListChecks className="h-3.5 w-3.5" />
+              Paso a paso
+            </Button>
+          </div>
+        )}
+
         {/* Matches by phase */}
         {PHASE_ORDER.filter(p => {
           if (!byPhase[p]?.length) return false
@@ -774,6 +932,121 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Random fill confirmation */}
+      <Dialog open={showRandomConfirm} onOpenChange={open => !open && setShowRandomConfirm(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Llenar predicciones al azar</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Se generarán <strong>{unpredictedOpenMatches.length} predicciones</strong> con marcadores aleatorios (0–4) para todos los partidos abiertos sin predicción.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRandomConfirm(false)} disabled={isFillingRandom}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRandomFill} disabled={isFillingRandom}>
+              {isFillingRandom ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guided fill modal */}
+      <Dialog open={showGuidedFill} onOpenChange={open => !open && setShowGuidedFill(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center text-sm font-bold">
+              Completar paso a paso · {guidedMatchList.length > 0 ? `${guidedIndex + 1} / ${guidedMatchList.length}` : "0"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {guidedMatchList.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-4">Sin partidos pendientes.</p>
+          ) : (() => {
+            const currentMatch = guidedMatchList[guidedIndex]
+            if (!currentMatch) return null
+            const isLastMatch = guidedIndex >= guidedMatchList.length - 1
+            const dateStr = new Date(currentMatch.match_date).toLocaleString("es", {
+              weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+            })
+            return (
+              <div className="space-y-4">
+                {/* Progress bar */}
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className="bg-primary h-1.5 rounded-full transition-all"
+                    style={{ width: `${(guidedIndex / guidedMatchList.length) * 100}%` }}
+                  />
+                </div>
+
+                {/* Match info */}
+                <div className="text-center space-y-1">
+                  <p className="text-xs text-muted-foreground">{dateStr}</p>
+                  <div className="flex items-center justify-center gap-2 font-bold text-sm">
+                    <span>{currentMatch.home_team}</span>
+                    <span className="text-muted-foreground">vs</span>
+                    <span>{currentMatch.away_team}</span>
+                  </div>
+                </div>
+
+                {/* Score inputs */}
+                <div className="flex items-center justify-center gap-3">
+                  <input
+                    ref={guidedHomeRef}
+                    type="text" inputMode="numeric" pattern="[0-9]*" value={guidedHome}
+                    onChange={e => {
+                      const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+                      setGuidedHome(cleaned)
+                      if (cleaned.length === 1) { guidedAwayRef.current?.focus(); guidedAwayRef.current?.select() }
+                    }}
+                    placeholder="0"
+                    className="w-14 h-14 text-2xl font-black rounded-xl border border-input bg-background text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                    style={{ textAlign: "center", padding: 0 }}
+                  />
+                  <span className="text-muted-foreground font-bold text-xl">-</span>
+                  <input
+                    ref={guidedAwayRef}
+                    type="text" inputMode="numeric" pattern="[0-9]*" value={guidedAway}
+                    onChange={e => {
+                      const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+                      setGuidedAway(cleaned)
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && guidedHome !== "" && guidedAway !== "") {
+                        e.preventDefault()
+                        handleGuidedNext()
+                      }
+                    }}
+                    placeholder="0"
+                    className="w-14 h-14 text-2xl font-black rounded-xl border border-input bg-background text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                    style={{ textAlign: "center", padding: 0 }}
+                  />
+                </div>
+
+                <DialogFooter className="gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setShowGuidedFill(false)}>
+                    Salir
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleGuidedSkip} disabled={isSavingGuided}>
+                    Saltar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleGuidedNext}
+                    disabled={guidedHome === "" || guidedAway === "" || isSavingGuided}
+                  >
+                    {isSavingGuided
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : isLastMatch ? "Guardar" : "Siguiente"}
+                  </Button>
+                </DialogFooter>
+              </div>
+            )
+          })()}
         </DialogContent>
       </Dialog>
     </>
