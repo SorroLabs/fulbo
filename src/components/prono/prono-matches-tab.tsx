@@ -562,7 +562,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       if (view === "grid") {
         return (
           <MatchCard
-            key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
+            key={`${match.id}-${myPredMap.get(match.id)?.updated_at ?? 'none'}`} match={match} prediction={myPredMap.get(match.id) ?? null}
             userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={extendedDeadline}
             onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
             onSave={handlePredSaved} onDelete={handlePredDeleted}
@@ -574,7 +574,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
       }
       return (
         <MatchListRow
-          key={match.id} match={match} prediction={myPredMap.get(match.id) ?? null}
+          key={`${match.id}-${myPredMap.get(match.id)?.updated_at ?? 'none'}`} match={match} prediction={myPredMap.get(match.id) ?? null}
           userId={userId} pronoId={pronoId ?? ""} eyeIcon={eyeOff} lateDeadline={extendedDeadline}
           onPowerUp={canUsePowerUps ? () => setPowerUpMatch(match) : undefined}
           onSave={handlePredSaved} onDelete={handlePredDeleted}
