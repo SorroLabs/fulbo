@@ -38,6 +38,8 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
   const [saved, setSaved] = useState(!!prediction)
   const [isPending, startTransition] = useTransition()
   const awayRef = useRef<HTMLInputElement>(null)
+  const latestHome = useRef(prediction?.home_score?.toString() ?? "")
+  const latestAway = useRef(prediction?.away_score?.toString() ?? "")
 
   const isLocked = match.status !== "upcoming" || !userId
   const deadline = new Date(match.match_date)
@@ -72,8 +74,8 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
   }
 
   const handleBlur = () => {
-    if (home !== "" && away !== "") handleSave(home, away)
-    else if (home === "" && away === "" && !!prediction) handleDelete()
+    if (latestHome.current !== "" && latestAway.current !== "") handleSave(latestHome.current, latestAway.current)
+    else if (latestHome.current === "" && latestAway.current === "" && !!prediction) handleDelete()
   }
 
   const statusColors = { upcoming: "secondary", live: "default", finished: "outline" } as const
@@ -124,6 +126,7 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
               ref={homeInputRef}
               onChange={e => {
                 const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+                latestHome.current = cleaned
                 setHome(cleaned)
                 setSaved(false)
                 if (cleaned.length === 1) { awayRef.current?.focus(); awayRef.current?.select() }
@@ -139,6 +142,7 @@ export function MatchListRow({ match, prediction, userId, pronoId, eyeIcon, onPo
               ref={awayRef}
               onChange={e => {
                 const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2)
+                latestAway.current = cleaned
                 setAway(cleaned)
                 setSaved(false)
                 if (cleaned.length === 1) onAwayFilled?.()
