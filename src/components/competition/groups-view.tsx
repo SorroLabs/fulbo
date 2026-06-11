@@ -254,7 +254,6 @@ export function GroupsView({ matches }: { matches: Match[] }) {
                         <div className="flex items-center gap-1.5">
                           <Flag name={t.name} logo={t.logo} />
                           <span className={cn("font-medium truncate max-w-[100px]", i < 8 && "font-semibold")}>{t.name}</span>
-                          {i < 8 && <span className="text-primary/60 text-[9px] font-bold hidden sm:inline">CLASIFICA</span>}
                         </div>
                       </td>
                       <td className="py-2 text-center text-muted-foreground">{t.groupName.replace("Grupo ", "")}</td>
