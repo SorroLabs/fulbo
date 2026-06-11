@@ -6,8 +6,7 @@ import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Calendar, Star, LayoutGrid } from "lucide-react"
-import { MatchesView } from "@/components/competition/matches-view"
+import { Trophy, Star, LayoutGrid } from "lucide-react"
 import { GroupsView } from "@/components/competition/groups-view"
 import type { Match } from "@/types"
 
@@ -93,9 +92,6 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           <TabsTrigger value="groups" className="rounded-full gap-2">
             <LayoutGrid className="h-4 w-4" /> Grupos
           </TabsTrigger>
-          <TabsTrigger value="matches" className="rounded-full gap-2">
-            <Calendar className="h-4 w-4" /> Partidos
-          </TabsTrigger>
           {hasOfficialAnswers && (
             <TabsTrigger value="specials" className="rounded-full gap-2">
               <Star className="h-4 w-4" /> Resultados especiales
@@ -105,15 +101,6 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
 
         <TabsContent value="groups" className="mt-6">
           <GroupsView matches={matchList} />
-        </TabsContent>
-
-        <TabsContent value="matches" className="mt-6">
-          <MatchesView
-            matches={matchList}
-            predMap={new Map()}
-            userId={null}
-            showUpcoming={false}
-          />
         </TabsContent>
 
         {hasOfficialAnswers && (
