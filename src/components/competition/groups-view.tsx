@@ -76,7 +76,7 @@ function GroupCard({ groupName, matches }: { groupName: string; matches: Match[]
         {/* Group header */}
         <div className="flex items-center justify-between">
           <Badge variant="outline" className="text-primary border-primary/30 font-bold">
-            Grupo {groupName}
+            {groupName}
           </Badge>
           <span className="text-xs text-muted-foreground">{playedMatches.length}/{matches.length} jugados</span>
         </div>
@@ -184,15 +184,97 @@ export function GroupsView({ matches }: { matches: Match[] }) {
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
   }, [matches])
 
+  // Best 8 third-place teams (3rd from each of the 12 groups)
+  const bestThirds = useMemo(() => {
+    return groupMatches
+      .map(([groupName, ms]) => {
+        const standings = calcGroupStandings(ms)
+        const third = standings[2]
+        return third ? { ...third, groupName } : null
+      })
+      .filter((t): t is TeamStats & { groupName: string } => t !== null)
+      .sort((a, b) => {
+        if (b.pts !== a.pts) return b.pts - a.pts
+        const diffB = b.gf - b.gc, diffA = a.gf - a.gc
+        if (diffB !== diffA) return diffB - diffA
+        if (b.gf !== a.gf) return b.gf - a.gf
+        return a.name.localeCompare(b.name)
+      })
+  }, [groupMatches])
+
   if (groupMatches.length === 0) {
     return <p className="text-center text-muted-foreground py-10">Los grupos se mostrarán cuando comiencen los partidos.</p>
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {groupMatches.map(([name, ms]) => (
-        <GroupCard key={name} groupName={name} matches={ms} />
-      ))}
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {groupMatches.map(([name, ms]) => (
+          <GroupCard key={name} groupName={name} matches={ms} />
+        ))}
+      </div>
+
+      {/* Best 8 thirds */}
+      {bestThirds.length > 0 && (
+        <Card>
+          <CardContent className="pt-4 pb-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="text-primary border-primary/30 font-bold">
+                Mejores terceros
+              </Badge>
+              <span className="text-xs text-muted-foreground">Top 8 clasifican a Ronda de 32</span>
+            </div>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-muted-foreground border-b border-border/50">
+                    <th className="text-left pb-1.5 font-medium w-6">#</th>
+                    <th className="text-left pb-1.5 font-medium">Equipo</th>
+                    <th className="text-center pb-1.5 font-medium w-12">Grupo</th>
+                    <th className="text-center pb-1.5 font-medium w-7">PJ</th>
+                    <th className="text-center pb-1.5 font-medium w-7">G</th>
+                    <th className="text-center pb-1.5 font-medium w-7">E</th>
+                    <th className="text-center pb-1.5 font-medium w-7">P</th>
+                    <th className="text-center pb-1.5 font-medium w-8">Dif</th>
+                    <th className="text-center pb-1.5 font-bold text-primary w-8">Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bestThirds.map((t, i) => (
+                    <tr
+                      key={t.name}
+                      className={cn(
+                        "border-b border-border/30 last:border-0",
+                        i < 8 && "bg-primary/5"
+                      )}
+                    >
+                      <td className="py-2 pr-1">
+                        <span className={cn("font-bold", i < 8 ? "text-primary" : "text-muted-foreground")}>{i + 1}</span>
+                      </td>
+                      <td className="py-2 pr-2">
+                        <div className="flex items-center gap-1.5">
+                          <Flag name={t.name} logo={t.logo} />
+                          <span className={cn("font-medium truncate max-w-[100px]", i < 8 && "font-semibold")}>{t.name}</span>
+                          {i < 8 && <span className="text-primary/60 text-[9px] font-bold hidden sm:inline">CLASIFICA</span>}
+                        </div>
+                      </td>
+                      <td className="py-2 text-center text-muted-foreground">{t.groupName.replace("Grupo ", "")}</td>
+                      <td className="py-2 text-center text-muted-foreground">{t.pj}</td>
+                      <td className="py-2 text-center text-muted-foreground">{t.g}</td>
+                      <td className="py-2 text-center text-muted-foreground">{t.e}</td>
+                      <td className="py-2 text-center text-muted-foreground">{t.p}</td>
+                      <td className="py-2 text-center text-muted-foreground">
+                        {t.gf - t.gc > 0 ? `+${t.gf - t.gc}` : t.gf - t.gc}
+                      </td>
+                      <td className="py-2 text-center font-black text-primary">{t.pts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
