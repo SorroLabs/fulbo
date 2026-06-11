@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Calendar, Star } from "lucide-react"
+import { Trophy, Calendar, Star, LayoutGrid } from "lucide-react"
 import { MatchesView } from "@/components/competition/matches-view"
+import { GroupsView } from "@/components/competition/groups-view"
 import type { Match } from "@/types"
 
 const SPECIAL_LABELS: Record<string, { label: string; emoji: string }> = {
@@ -87,8 +88,11 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
         </Card>
       </div>
 
-      <Tabs defaultValue="matches">
+      <Tabs defaultValue="groups">
         <TabsList className="rounded-full">
+          <TabsTrigger value="groups" className="rounded-full gap-2">
+            <LayoutGrid className="h-4 w-4" /> Grupos
+          </TabsTrigger>
           <TabsTrigger value="matches" className="rounded-full gap-2">
             <Calendar className="h-4 w-4" /> Partidos
           </TabsTrigger>
@@ -98,6 +102,10 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
             </TabsTrigger>
           )}
         </TabsList>
+
+        <TabsContent value="groups" className="mt-6">
+          <GroupsView matches={matchList} />
+        </TabsContent>
 
         <TabsContent value="matches" className="mt-6">
           <MatchesView
