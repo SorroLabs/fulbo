@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus, Star, TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus, Star } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
 import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
@@ -12,6 +12,7 @@ import { PronoMatchesTab } from "@/components/prono/prono-matches-tab"
 import { PronoCoinsTab } from "@/components/prono/prono-coins-tab"
 import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
 import { PronoJoinButton } from "@/components/prono/prono-join-button"
+import { PronoRankingTab } from "@/components/prono/prono-ranking-tab"
 import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
@@ -243,112 +244,15 @@ export default async function PollaDetailPage({ params, searchParams }: { params
         </TabsContent>
 
         <TabsContent value="ranking" className="mt-6">
-          <Card>
-            {/* Column headers */}
-            <div className="flex items-center gap-3 px-4 pt-3 pb-1 border-b border-border/50">
-              <div className="w-6 shrink-0" />
-              <div className="w-9 shrink-0" />
-              <div className="flex-1" />
-              <div className="hidden sm:grid grid-cols-3 gap-4 text-center">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-12">Pts</span>
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-12">Exactos</span>
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-12">Efect.</span>
-              </div>
-              <div className="sm:hidden text-[11px] font-bold text-muted-foreground uppercase tracking-wide w-10 text-right">Pts</div>
-            </div>
-            <CardContent className="pt-0 divide-y divide-border/50">
-              {(() => {
-                const finishedMatches = (matches ?? []).filter((m: any) => m.status === "finished")
-                const doublePointsSet = new Set(
-                  ((allPowerUps ?? []) as any[])
-                    .filter((pu: any) => pu.type === "double_points")
-                    .map((pu: any) => `${pu.user_id}:${pu.match_id}`)
-                )
-                return membersWithLivePoints.map((member: any, i: number) => {
-                const isMe = member.user_id === user?.id
-                const initials = member.profiles?.full_name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"
-
-                const memberPreds = (allPredictions ?? []).filter((p: any) => p.user_id === member.user_id)
-                const predByMatch = new Map(memberPreds.map((p: any) => [p.match_id, p]))
-
-                let exactos = 0
-                let jugados = 0
-                let maxPts = 0
-
-                for (const m of finishedMatches) {
-                  const pred = predByMatch.get(m.id)
-                  if (!pred) continue
-                  jugados++
-                  const base = m.phase === "groups" ? 10 : 20
-                  const hasDouble = doublePointsSet.has(`${member.user_id}:${m.id}`)
-                  maxPts += hasDouble ? base * 2 : base
-                  if (pred.home_score === m.home_score && pred.away_score === m.away_score) {
-                    exactos++
-                  }
-                }
-
-                const efectividad = maxPts > 0 ? Math.round((member.total_points / maxPts) * 100) : null
-                const currentRank = i + 1
-                const prevRank = prevRankMap.get(member.user_id)
-                const rankDelta = prevRank != null ? prevRank - currentRank : null
-
-                return (
-                  <div key={member.id} className={`flex items-center gap-3 py-3 ${isMe ? "text-primary" : ""}`}>
-                    <div className="w-6 shrink-0 flex flex-col items-center">
-                      <span className={`font-black text-base ${i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}>
-                        {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : currentRank}
-                      </span>
-                      {rankDelta !== null && rankDelta !== 0 && (
-                        <span className={`flex items-center text-[11px] font-bold leading-none ${rankDelta > 0 ? "text-emerald-500" : "text-red-500"}`}>
-                          {rankDelta > 0
-                            ? <><TrendingUp className="h-2.5 w-2.5" />+{rankDelta}</>
-                            : <><TrendingDown className="h-2.5 w-2.5" />{rankDelta}</>}
-                        </span>
-                      )}
-                      {rankDelta === 0 && prevRank != null && (
-                        <Minus className="h-2.5 w-2.5 text-muted-foreground/40" />
-                      )}
-                    </div>
-                    <Avatar className="h-9 w-9 shrink-0">
-                      <AvatarImage src={member.profiles?.avatar_url} />
-                      <AvatarFallback className="text-xs font-bold">{initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-semibold leading-tight truncate text-sm ${isMe ? "text-primary" : ""}`}>
-                        {member.profiles?.full_name ?? "Usuario"} {isMe && <span className="font-normal opacity-60">(tú)</span>}
-                        {member.user_id === prono.owner_id && (
-                          <Crown className="h-3 w-3 text-primary inline ml-1 mb-0.5" />
-                        )}
-                      </p>
-                      {member.profiles?.nickname && (
-                        <p className="text-xs text-muted-foreground leading-tight truncate">@{member.profiles.nickname}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground sm:hidden">
-                        {exactos > 0 && <span className="text-primary font-semibold">{exactos} exactos</span>}
-                        {exactos > 0 && efectividad !== null && " · "}
-                        {efectividad !== null && <span>{efectividad}% efect.</span>}
-                        {exactos === 0 && efectividad === null && "Sin predicciones aún"}
-                      </p>
-                    </div>
-                    {/* Desktop stats */}
-                    <div className="hidden sm:grid grid-cols-3 gap-4 text-center">
-                      <span className="font-black text-base w-12">{member.total_points}</span>
-                      <span className="font-bold text-sm w-12 text-primary">{exactos}</span>
-                      <span className="font-bold text-sm w-12 text-muted-foreground">
-                        {efectividad !== null ? `${efectividad}%` : "—"}
-                      </span>
-                    </div>
-                    {/* Mobile: only points */}
-                    <span className="sm:hidden font-black text-base shrink-0 w-10 text-right">{member.total_points}</span>
-                  </div>
-                )
-              })
-              })()}
-              {!membersWithLivePoints.length && (
-                <p className="text-center text-muted-foreground py-8">Nadie ha sumado puntos aún.</p>
-              )}
-            </CardContent>
-          </Card>
+          <PronoRankingTab
+            members={membersWithLivePoints}
+            matches={(matches as Match[]) ?? []}
+            allPredictions={(allPredictions as any[]) ?? []}
+            currentUserId={user?.id ?? null}
+            ownerId={prono.owner_id}
+            prevRankMap={prevRankMap}
+            allPowerUps={(allPowerUps as any[]) ?? []}
+          />
         </TabsContent>
 
         <TabsContent value="specials" className="mt-6">
