@@ -244,7 +244,7 @@ function MemberPredictionsContent({
           return (
             <div key={match.id} className={cn(
               "text-xs px-2.5 py-2 rounded-lg",
-              isExact ? "bg-primary/10" : isCorrect ? "bg-emerald-500/10" : "bg-muted/40"
+              isExact ? "bg-emerald-500/10" : isCorrect ? "bg-yellow-500/10" : "bg-muted/40"
             )}>
               {/* Teams + actual score */}
               <div className="flex items-center gap-1.5">
@@ -263,13 +263,13 @@ function MemberPredictionsContent({
                 <span className="text-muted-foreground">
                   Pronosticó: <span className={cn(
                     "font-bold",
-                    isExact ? "text-primary" : isCorrect ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
+                    isExact ? "text-emerald-600 dark:text-emerald-400" : isCorrect ? "text-yellow-600 dark:text-yellow-400" : "text-foreground"
                   )}>{pred.home_score}-{pred.away_score}</span>
                 </span>
                 {pred.points_earned != null && (
                   <span className={cn(
                     "font-black",
-                    pred.points_earned > 0 ? (isExact ? "text-primary" : "text-emerald-600 dark:text-emerald-400") : "text-muted-foreground"
+                    isExact ? "text-emerald-600 dark:text-emerald-400" : isCorrect ? "text-yellow-600 dark:text-yellow-400" : "text-muted-foreground"
                   )}>
                     {pred.points_earned > 0 ? `+${pred.points_earned}p` : "0p"}
                   </span>
