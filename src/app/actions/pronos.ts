@@ -225,6 +225,13 @@ export async function removeMember({ pronoId, userId }: { pronoId: string; userI
 
   if (error) return { error: error.message }
 
+  // Also delete their predictions for this prono so they don't appear in rankings
+  await service
+    .from("predictions")
+    .delete()
+    .eq("prono_id", pronoId)
+    .eq("user_id", userId)
+
   revalidatePath(`/pronos`)
   return { success: true }
 }
