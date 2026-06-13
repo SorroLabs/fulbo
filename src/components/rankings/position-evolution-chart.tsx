@@ -77,17 +77,17 @@ export function PositionEvolutionChart({ snapshots, currentUserId }: Props) {
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 16, right: 36, bottom: 4, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tick={{ fontSize: 11, fill: "#888" }}
               axisLine={false} tickLine={false}
             />
             <YAxis
               reversed
               domain={[1, allPlayers.length || 1]}
               allowDecimals={false}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tick={{ fontSize: 11, fill: "#888" }}
               axisLine={false} tickLine={false}
             />
             <Tooltip
