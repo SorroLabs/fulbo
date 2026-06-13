@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, Star, TrendingUp } from "lucide-react"
+import { Trophy, Globe, Lock, Crown, Calendar, Coins, Star, TrendingUp } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
 import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
@@ -15,9 +15,6 @@ import { PronoJoinButton } from "@/components/prono/prono-join-button"
 import { PronoRankingTab } from "@/components/prono/prono-ranking-tab"
 import { PositionEvolutionChart } from "@/components/rankings/position-evolution-chart"
 import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
-import Link from "next/link"
-import { buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import type { Match } from "@/types"
 import type { Metadata } from "next"
 
@@ -164,10 +161,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
           <p className="text-muted-foreground">{(prono as any).competitions?.name} · {(prono as any).competitions?.season}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-          <Link href={`/competitions/${prono.competition_id}/rankings`} className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2")}>
-            <BarChart3 className="h-4 w-4" /> Estadísticas
-          </Link>
-          {!isMember && !isOwner && (
+{!isMember && !isOwner && (
             <PronoJoinButton pronoId={prono.id} inviteCode={prono.invite_code} isLoggedIn={!!user} referrerId={referrerId} />
           )}
           {(isMember || isOwner) && (
