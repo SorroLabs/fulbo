@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { notFound } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, UserPlus, Star } from "lucide-react"
+import { Trophy, Globe, Lock, Crown, Calendar, BarChart3, Coins, Star, TrendingUp } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PronoInvite } from "@/components/prono/prono-invite"
 import { PronoVisibilityToggle } from "@/components/prono/prono-visibility-toggle"
@@ -13,6 +13,7 @@ import { PronoCoinsTab } from "@/components/prono/prono-coins-tab"
 import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
 import { PronoJoinButton } from "@/components/prono/prono-join-button"
 import { PronoRankingTab } from "@/components/prono/prono-ranking-tab"
+import { PositionEvolutionChart } from "@/components/rankings/position-evolution-chart"
 import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
@@ -84,7 +85,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
 
   const memberIds = (members ?? []).map((m: any) => m.user_id)
 
-  const [{ data: matches }, { data: allPredictions }, { data: myPowerUps }, { data: allPowerUps }, { data: myMembership }, { data: myTransactions }, { data: mySpecials }, { data: lastSnapshot }] = await Promise.all([
+  const [{ data: matches }, { data: allPredictions }, { data: myPowerUps }, { data: allPowerUps }, { data: myMembership }, { data: myTransactions }, { data: mySpecials }, { data: pronoSnapshots }] = await Promise.all([
     supabase.from("matches").select("*").eq("competition_id", prono.competition_id)
       .not("home_team", "like", "Ganador%")
       .order("match_date"),
@@ -107,11 +108,9 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       ? supabase.from("special_predictions").select("*").eq("user_id", user.id).eq("competition_id", prono.competition_id)
       : { data: [] },
     supabase.from("leaderboard_snapshots")
-      .select("snapshot_data")
+      .select("snapshot_data, matches(home_team, away_team)")
       .eq("prono_id", prono.id)
-      .order("created_at", { ascending: false })
-      .range(1, 1)
-      .maybeSingle(),
+      .order("created_at", { ascending: true }),
   ])
 
   // Calculate total_points on-the-fly from predictions so the leaderboard
@@ -127,9 +126,11 @@ export default async function PollaDetailPage({ params, searchParams }: { params
     .map((m: any) => ({ ...m, total_points: pointsByUser.get(m.user_id) ?? 0 }))
     .sort((a: any, b: any) => b.total_points - a.total_points)
 
-  // Previous rank map from last snapshot
+  // Previous rank map from second-to-last snapshot (snapshots ordered ascending)
+  const snapshotList = (pronoSnapshots ?? []) as any[]
+  const prevSnapshot = snapshotList.length >= 2 ? snapshotList[snapshotList.length - 2] : null
   const prevRankMap = new Map<string, number>(
-    ((lastSnapshot as any)?.snapshot_data ?? []).map((e: any) => [e.user_id, e.rank])
+    (prevSnapshot?.snapshot_data ?? []).map((e: any) => [e.user_id, e.rank])
   )
 
   const allMembersForAdmin = (members ?? [])
@@ -222,6 +223,11 @@ export default async function PollaDetailPage({ params, searchParams }: { params
           <TabsTrigger value="specials" className="rounded-full gap-2">
             <Star className="h-4 w-4" /> Especiales
           </TabsTrigger>
+          {snapshotList.length > 0 && (
+            <TabsTrigger value="evolution" className="rounded-full gap-2">
+              <TrendingUp className="h-4 w-4" /> Evolución
+            </TabsTrigger>
+          )}
           {isMember && (
             <TabsTrigger value="coins" className="rounded-full gap-2">
               <Coins className="h-4 w-4" /> Monedas
@@ -253,6 +259,10 @@ export default async function PollaDetailPage({ params, searchParams }: { params
             prevRankMap={prevRankMap}
             allPowerUps={(allPowerUps as any[]) ?? []}
           />
+        </TabsContent>
+
+        <TabsContent value="evolution" className="mt-6">
+          <PositionEvolutionChart snapshots={snapshotList} currentUserId={user?.id ?? null} />
         </TabsContent>
 
         <TabsContent value="specials" className="mt-6">
