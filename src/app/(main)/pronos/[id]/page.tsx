@@ -207,7 +207,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       </div>
 
       <Tabs defaultValue="ranking">
-        <TabsList className="rounded-full">
+        <TabsList className="h-auto flex-wrap gap-1 rounded-xl w-full justify-start">
           <TabsTrigger value="ranking" className="rounded-full gap-2">
             <Trophy className="h-4 w-4" /> Tabla
           </TabsTrigger>
