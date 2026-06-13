@@ -14,6 +14,7 @@ import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
 import { PronoJoinButton } from "@/components/prono/prono-join-button"
 import { PronoRankingTab } from "@/components/prono/prono-ranking-tab"
 import { PositionEvolutionChart } from "@/components/rankings/position-evolution-chart"
+import { ScrollableTabsList } from "@/components/ui/scrollable-tabs-list"
 import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
 import type { Match } from "@/types"
 import type { Metadata } from "next"
@@ -207,7 +208,8 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       </div>
 
       <Tabs defaultValue="ranking">
-        <TabsList className="h-auto flex-wrap gap-1.5 rounded-xl justify-start mb-4 [&>[data-slot=tabs-trigger]]:flex-none">
+        <ScrollableTabsList>
+        <TabsList className="rounded-full w-max">
           <TabsTrigger value="ranking" className="rounded-full gap-2">
             <Trophy className="h-4 w-4" /> Tabla
           </TabsTrigger>
@@ -228,6 +230,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
             </TabsTrigger>
           )}
         </TabsList>
+        </ScrollableTabsList>
 
         <TabsContent value="matches" className="mt-6 data-[hidden]:hidden" keepMounted>
           <PronoMatchesTab
