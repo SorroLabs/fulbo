@@ -184,28 +184,35 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-2xl font-black text-primary">{membersWithLivePoints.length}</p>
-            <p className="text-xs text-muted-foreground">Participantes</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-2xl font-black">{prono.max_members}</p>
-            <p className="text-xs text-muted-foreground">Máximo</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5 text-center">
-            <p className="text-2xl font-black text-primary">
-              {membersWithLivePoints.find((m: any) => m.user_id === user?.id)?.total_points ?? 0}
-            </p>
-            <p className="text-xs text-muted-foreground">Tus puntos</p>
-          </CardContent>
-        </Card>
-      </div>
+      {(() => {
+        const myIndex = user ? membersWithLivePoints.findIndex((m: any) => m.user_id === user.id) : -1
+        const myRank = myIndex >= 0 ? myIndex + 1 : null
+        const myPoints = myIndex >= 0 ? membersWithLivePoints[myIndex].total_points : null
+        const total = membersWithLivePoints.length
+        const rankLabel = myRank === 1 ? "🥇" : myRank === 2 ? "🥈" : myRank === 3 ? "🥉" : myRank ? `#${myRank}` : "—"
+        return (
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-5 text-center">
+                <p className="text-2xl font-black text-primary">{total}</p>
+                <p className="text-xs text-muted-foreground">Participantes</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5 text-center">
+                <p className="text-2xl font-black">{myRank != null ? rankLabel : prono.max_members}</p>
+                <p className="text-xs text-muted-foreground">{myRank != null ? "Tu posición" : "Máximo"}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5 text-center">
+                <p className="text-2xl font-black text-primary">{myPoints ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Tus puntos</p>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      })()}
 
       <Tabs defaultValue="ranking">
         <ScrollableTabsList>
