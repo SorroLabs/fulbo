@@ -12,7 +12,7 @@ import { MatchListRow } from "@/components/competition/match-list-row"
 import { MatchFilterBar } from "@/components/competition/match-filter-bar"
 import { PowerUpModal } from "@/components/prono/power-up-modal"
 import { savePrediction, fillRandomPredictions } from "@/app/actions/predictions"
-import { Eye, EyeOff, LayoutGrid, List, TrendingUp, TrendingDown, Minus, Zap, Shield, Clock, Shuffle, ListChecks, Loader2 } from "lucide-react"
+import { Eye, EyeOff, LayoutGrid, List, TrendingUp, TrendingDown, Minus, Zap, Shield, Clock, Shuffle, ListChecks, Loader2, ChevronDown } from "lucide-react"
 import { getTeamFlag } from "@/lib/team-flags"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -262,6 +262,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
   const [selected, setSelected] = useState<Match | null>(null)
   const [powerUpMatch, setPowerUpMatch] = useState<Match | null>(null)
   const [view, setView] = useState<"grid" | "list">("grid")
+  const [finishedExpanded, setFinishedExpanded] = useState(false)
   const [filters, setFilters] = useState<MatchFilters>(EMPTY_FILTERS)
   const [predOverrides, setPredOverrides] = useState<Map<string, { home: number; away: number }>>(new Map())
   const [deletedPredIds, setDeletedPredIds] = useState<Set<string>>(new Set())
@@ -385,11 +386,25 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     [matches, filters, matchdays, predictedIds]
   )
 
-  const byPhase = useMemo(() => filtered.reduce((acc, m) => {
-    if (!acc[m.phase]) acc[m.phase] = []
-    acc[m.phase].push(m)
-    return acc
-  }, {} as Record<string, Match[]>), [filtered])
+  const byPhase = useMemo(() => filtered
+    .filter(m => m.status !== "finished")
+    .reduce((acc, m) => {
+      if (!acc[m.phase]) acc[m.phase] = []
+      acc[m.phase].push(m)
+      return acc
+    }, {} as Record<string, Match[]>), [filtered])
+
+  const finishedByPhase = useMemo(() => filtered
+    .filter(m => m.status === "finished")
+    .reduce((acc, m) => {
+      if (!acc[m.phase]) acc[m.phase] = []
+      acc[m.phase].push(m)
+      return acc
+    }, {} as Record<string, Match[]>), [filtered])
+
+  const finishedCount = useMemo(() =>
+    Object.values(finishedByPhase).reduce((sum, ms) => sum + ms.length, 0),
+    [finishedByPhase])
 
   const groupsByFecha = useMemo(() => {
     const map = new Map<number, Match[]>()
@@ -739,7 +754,7 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     )
   }
 
-  const hasResults = PHASE_ORDER.some(p => byPhase[p]?.length)
+  const hasResults = PHASE_ORDER.some(p => byPhase[p]?.length || finishedByPhase[p]?.length)
 
   return (
     <>
@@ -786,7 +801,57 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
           </div>
         )}
 
-        {/* Matches by phase */}
+        {/* Finished matches — collapsible */}
+        {finishedCount > 0 && (
+          <div className="space-y-3">
+            <button
+              onClick={() => setFinishedExpanded(v => !v)}
+              className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+            >
+              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", finishedExpanded && "rotate-180")} />
+              {finishedCount} {finishedCount === 1 ? "partido finalizado" : "partidos finalizados"}
+            </button>
+            {finishedExpanded && (
+              <div className="space-y-4">
+                {PHASE_ORDER.filter(p => finishedByPhase[p]?.length).map(phase => (
+                  <div key={phase} className="space-y-4">
+                    {phase === "groups" ? (
+                      filters.fecha !== null ? (
+                        renderSection(finishedByPhase.groups)
+                      ) : (
+                        (() => {
+                          const byFecha = new Map<number, Match[]>()
+                          for (const m of finishedByPhase.groups) {
+                            const f = matchdays.get(m.id) ?? 0
+                            if (!byFecha.has(f)) byFecha.set(f, [])
+                            byFecha.get(f)!.push(m)
+                          }
+                          return [...byFecha.entries()].sort(([a], [b]) => a - b).map(([fecha, ms]) => (
+                            <div key={fecha}>
+                              <h3 className="font-bold text-lg mb-3">
+                                <Badge variant="outline" className="text-primary border-primary/30">Fecha {fecha}</Badge>
+                              </h3>
+                              {renderSection(ms)}
+                            </div>
+                          ))
+                        })()
+                      )
+                    ) : (
+                      <div>
+                        <h3 className="font-bold text-lg mb-3">
+                          <Badge variant="outline" className="text-primary border-primary/30">{PHASE_LABELS[phase]}</Badge>
+                        </h3>
+                        {renderSection(finishedByPhase[phase])}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Open / live matches by phase */}
         {PHASE_ORDER.filter(p => {
           if (!byPhase[p]?.length) return false
           if (p !== "groups" && byPhase[p].every(m => m.status === "upcoming")) return false
