@@ -14,10 +14,9 @@ import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
 import { PronoJoinButton } from "@/components/prono/prono-join-button"
 import { PronoRankingTab } from "@/components/prono/prono-ranking-tab"
 import { PositionEvolutionChart } from "@/components/rankings/position-evolution-chart"
-import { LiveMatchesHeader } from "@/components/prono/live-matches-header"
 import { ScrollableTabsList } from "@/components/ui/scrollable-tabs-list"
 import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
-import type { Match, Prediction } from "@/types"
+import type { Match } from "@/types"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -214,13 +213,6 @@ export default async function PollaDetailPage({ params, searchParams }: { params
           </div>
         )
       })()}
-
-      <LiveMatchesHeader
-        liveMatches={(matches as Match[] | null)?.filter(m => m.status === "live") ?? []}
-        predictions={(allPredictions as Prediction[]) ?? []}
-        userId={user?.id ?? null}
-        pronoId={prono.id}
-      />
 
       <Tabs defaultValue="ranking">
         <ScrollableTabsList>
