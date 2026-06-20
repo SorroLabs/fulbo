@@ -13,6 +13,7 @@ import { PronoCoinsTab } from "@/components/prono/prono-coins-tab"
 import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
 import { PronoJoinButton } from "@/components/prono/prono-join-button"
 import { PronoRankingTab } from "@/components/prono/prono-ranking-tab"
+import { RealtimeLeaderboard } from "@/components/layout/realtime-leaderboard"
 import { PositionEvolutionChart } from "@/components/rankings/position-evolution-chart"
 import { ScrollableTabsList } from "@/components/ui/scrollable-tabs-list"
 import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
@@ -148,6 +149,7 @@ export default async function PollaDetailPage({ params, searchParams }: { params
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+      <RealtimeLeaderboard competitionId={prono.competition_id} />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>

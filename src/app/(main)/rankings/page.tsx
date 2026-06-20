@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trophy, TrendingUp } from "lucide-react"
 import { PositionEvolutionChart } from "@/components/rankings/position-evolution-chart"
 import { CompetitionSelector } from "@/components/rankings/competition-selector"
+import { RealtimeLeaderboard } from "@/components/layout/realtime-leaderboard"
 
 export default async function RankingsPage({
   searchParams,
@@ -50,6 +51,7 @@ export default async function RankingsPage({
 
   return (
     <div className="space-y-8">
+      <RealtimeLeaderboard competitionId={competition.id} />
       <div>
         <h1 className="text-3xl font-black mb-1">Rankings</h1>
         <p className="text-muted-foreground">Ranking global por competición</p>
