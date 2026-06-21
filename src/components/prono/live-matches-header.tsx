@@ -65,19 +65,15 @@ export function LiveMatchesHeader({ liveMatches, predictions, members, myPowerUp
           <button
             key={match.id}
             onClick={() => setSelected(match)}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-primary/50 shadow-sm shadow-primary/10 px-3 py-2 hover:bg-muted/40 transition-colors basis-[calc(33.333%-0.5rem)] grow-0 shrink-0"
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-primary/50 shadow-sm shadow-primary/10 px-4 py-2 hover:bg-muted/40 transition-colors shrink-0"
           >
             <span className="text-[10px] font-bold text-primary flex items-center gap-1">🔴 EN VIVO</span>
-            <span className="flex items-center gap-1.5 text-sm">
-              <span className="flex items-center gap-1.5">
-                <span className="font-bold text-sm">{teamCode(match.home_team)}</span>
-                <Flag name={match.home_team} logo={match.home_team_logo} />
-              </span>
-              <span className="text-muted-foreground text-xs px-0.5">vs</span>
-              <span className="flex items-center gap-1.5">
-                <Flag name={match.away_team} logo={match.away_team_logo} />
-                <span className="font-bold text-sm">{teamCode(match.away_team)}</span>
-              </span>
+            <span className="flex items-center gap-2 text-sm">
+              <span className="font-bold text-sm">{teamCode(match.home_team)}</span>
+              <Flag name={match.home_team} logo={match.home_team_logo} />
+              <span className="text-muted-foreground text-xs">vs</span>
+              <Flag name={match.away_team} logo={match.away_team_logo} />
+              <span className="font-bold text-sm">{teamCode(match.away_team)}</span>
             </span>
           </button>
         ))}
