@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
+import { fetchAllRows } from "@/lib/supabase/pagination"
 import { notFound } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -84,19 +85,24 @@ export default async function PollaDetailPage({ params, searchParams }: { params
 
   const memberIds = (members ?? []).map((m: any) => m.user_id)
 
-  const [{ data: matches }, { data: allPredictions }, { data: myPowerUps }, { data: allPowerUps }, { data: myMembership }, { data: myTransactions }, { data: mySpecials }, { data: pronoSnapshots }] = await Promise.all([
+  const [{ data: matches }, allPredictions, { data: myPowerUps }, allPowerUps, { data: myMembership }, { data: myTransactions }, { data: mySpecials }, { data: pronoSnapshots }] = await Promise.all([
     supabase.from("matches").select("*").eq("competition_id", prono.competition_id)
       .not("home_team", "like", "Ganador%")
       .order("match_date"),
     memberIds.length > 0
-      ? supabase.from("predictions").select("*")
-          .eq("prono_id", prono.id)
-          .in("user_id", memberIds)
-      : { data: [] },
+      ? fetchAllRows((from, to) =>
+          supabase.from("predictions").select("*")
+            .eq("prono_id", prono.id)
+            .in("user_id", memberIds)
+            .range(from, to)
+        )
+      : Promise.resolve([]),
     user
       ? supabase.from("power_up_uses").select("*").eq("prono_id", prono.id).eq("user_id", user.id)
       : { data: [] },
-    supabase.from("power_up_uses").select("user_id, match_id, type").eq("prono_id", prono.id),
+    fetchAllRows((from, to) =>
+      supabase.from("power_up_uses").select("user_id, match_id, type").eq("prono_id", prono.id).range(from, to)
+    ),
     user
       ? supabase.from("prono_members").select("coins_in_prono").eq("prono_id", prono.id).eq("user_id", user.id).single()
       : { data: null },
