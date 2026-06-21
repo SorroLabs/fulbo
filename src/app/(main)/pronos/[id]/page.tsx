@@ -15,11 +15,19 @@ import { PronoAdminSheet } from "@/components/prono/prono-admin-sheet"
 import { PronoJoinButton } from "@/components/prono/prono-join-button"
 import { PronoRankingTab } from "@/components/prono/prono-ranking-tab"
 import { RealtimeLeaderboard } from "@/components/layout/realtime-leaderboard"
+import { LiveMatchesHeader } from "@/components/prono/live-matches-header"
 import { PositionEvolutionChart } from "@/components/rankings/position-evolution-chart"
 import { ScrollableTabsList } from "@/components/ui/scrollable-tabs-list"
 import { SpecialPredictionsForm } from "@/components/competition/special-predictions-form"
-import type { Match } from "@/types"
+import type { Match, Prediction } from "@/types"
 import type { Metadata } from "next"
+
+// A match is considered "live" purely by kickoff time, not the DB status column —
+// the score-sync cron only runs once a day, so status can lag reality by hours.
+// 2h30 covers regulation + halftime + extra time + penalties for knockout matches.
+// Once an admin reports the final score, status flips to "finished" immediately
+// and the match drops out of the window below, regardless of elapsed time.
+const LIVE_WINDOW_MS = 2.5 * 60 * 60 * 1000
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
@@ -183,6 +191,13 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       .flatMap(m => [m.home_team, m.away_team]) ?? []
   )).sort((a, b) => a.localeCompare(b, "es"))
 
+  const now = Date.now()
+  const liveMatches = ((matches as Match[]) ?? []).filter(m => {
+    if (m.status === "finished") return false
+    const kickoff = new Date(m.match_date).getTime()
+    return now >= kickoff && now <= kickoff + LIVE_WINDOW_MS
+  })
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <RealtimeLeaderboard competitionId={prono.competition_id} />
@@ -251,6 +266,13 @@ export default async function PollaDetailPage({ params, searchParams }: { params
           </div>
         )
       })()}
+
+      <LiveMatchesHeader
+        liveMatches={liveMatches}
+        predictions={(allPredictions as Prediction[]) ?? []}
+        userId={user?.id ?? null}
+        pronoId={prono.id}
+      />
 
       <Tabs defaultValue="ranking">
         <ScrollableTabsList>
