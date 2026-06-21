@@ -73,7 +73,7 @@ export function LiveMatchesHeader({ liveMatches, predictions, members, myPowerUp
                 <span className="font-bold text-sm">{teamCode(match.home_team)}</span>
                 <Flag name={match.home_team} logo={match.home_team_logo} />
               </span>
-              <span className="text-muted-foreground text-xs">vs</span>
+              <span className="text-muted-foreground text-xs px-0.5">vs</span>
               <span className="flex items-center gap-1.5">
                 <Flag name={match.away_team} logo={match.away_team_logo} />
                 <span className="font-bold text-sm">{teamCode(match.away_team)}</span>
