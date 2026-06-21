@@ -1,38 +1,62 @@
 "use client"
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MatchCard } from "@/components/competition/match-card"
+import { useMemo, useState } from "react"
+import { MatchDetailDialog, type Member } from "@/components/prono/match-detail-dialog"
 import { getTeamFlag } from "@/lib/team-flags"
-import type { Match, Prediction } from "@/types"
+import type { Match, Prediction, PowerUpUse } from "@/types"
 
-function TeamCode({ name, logo }: { name: string; logo: string | null }) {
+function teamCode(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .slice(0, 3)
+    .toUpperCase()
+}
+
+function Flag({ name, logo }: { name: string; logo: string | null }) {
   const src = logo || getTeamFlag(name)
-  const code = name.slice(0, 3).toUpperCase()
-  return (
-    <span className="flex items-center gap-1.5">
-      {src
-        ? <img src={src} alt={name} className="rounded-sm shadow-sm object-cover" style={{ width: 20, height: 14 }} />
-        : <span className="rounded-sm bg-muted" style={{ width: 20, height: 14 }} />}
-      <span className="font-bold text-sm">{code}</span>
-    </span>
-  )
+  if (!src) return <span className="rounded-sm bg-muted" style={{ width: 20, height: 14 }} />
+  return <img src={src} alt={name} className="rounded-sm shadow-sm object-cover" style={{ width: 20, height: 14 }} />
 }
 
 interface Props {
   liveMatches: Match[]
   predictions: Prediction[]
+  members: Member[]
+  myPowerUps: PowerUpUse[]
+  allPowerUps: PowerUpUse[]
   userId: string | null
-  pronoId: string
 }
 
-export function LiveMatchesHeader({ liveMatches, predictions, userId, pronoId }: Props) {
+export function LiveMatchesHeader({ liveMatches, predictions, members, myPowerUps, allPowerUps, userId }: Props) {
   const [selected, setSelected] = useState<Match | null>(null)
 
-  if (liveMatches.length === 0) return null
+  const selectedPreds = useMemo(() => {
+    if (!selected) return new Map<string, Prediction>()
+    const map = new Map<string, Prediction>()
+    for (const p of predictions) {
+      if (p.match_id === selected.id) map.set(p.user_id, p)
+    }
+    return map
+  }, [predictions, selected])
 
-  const myPrediction = (matchId: string) =>
-    predictions.find(p => p.match_id === matchId && p.user_id === userId) ?? null
+  const selectedPowerUpsByUser = useMemo(() => {
+    if (!selected) return new Map<string, Set<string>>()
+    const map = new Map<string, Set<string>>()
+    for (const pu of allPowerUps) {
+      if (pu.match_id !== selected.id) continue
+      if (!map.has(pu.user_id)) map.set(pu.user_id, new Set())
+      map.get(pu.user_id)!.add(pu.type)
+    }
+    return map
+  }, [allPowerUps, selected])
+
+  const currentRanking = useMemo(() =>
+    members.map(m => ({ user_id: m.user_id, total_points: m.total_points ?? 0 })),
+    [members]
+  )
+
+  if (liveMatches.length === 0) return null
 
   return (
     <>
@@ -45,29 +69,31 @@ export function LiveMatchesHeader({ liveMatches, predictions, userId, pronoId }:
           >
             <span className="text-[10px] font-bold text-primary flex items-center gap-1">🔴 EN VIVO</span>
             <span className="flex items-center gap-1.5 text-sm">
-              <TeamCode name={match.home_team} logo={match.home_team_logo} />
+              <span className="flex items-center gap-1.5">
+                <span className="font-bold text-sm">{teamCode(match.home_team)}</span>
+                <Flag name={match.home_team} logo={match.home_team_logo} />
+              </span>
               <span className="text-muted-foreground text-xs">vs</span>
-              <TeamCode name={match.away_team} logo={match.away_team_logo} />
+              <span className="flex items-center gap-1.5">
+                <Flag name={match.away_team} logo={match.away_team_logo} />
+                <span className="font-bold text-sm">{teamCode(match.away_team)}</span>
+              </span>
             </span>
           </button>
         ))}
       </div>
 
-      <Dialog open={!!selected} onOpenChange={open => !open && setSelected(null)}>
-        <DialogContent className="max-w-md w-full">
-          <DialogHeader>
-            <DialogTitle className="text-center">Partido en vivo</DialogTitle>
-          </DialogHeader>
-          {selected && (
-            <MatchCard
-              match={selected}
-              prediction={myPrediction(selected.id)}
-              userId={userId}
-              pronoId={pronoId}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <MatchDetailDialog
+        open={!!selected}
+        onOpenChange={open => !open && setSelected(null)}
+        match={selected}
+        members={members}
+        preds={selectedPreds}
+        powerUpsByUser={selectedPowerUpsByUser}
+        currentRanking={currentRanking}
+        userId={userId}
+        scenarioPowerUps={myPowerUps}
+      />
     </>
   )
 }

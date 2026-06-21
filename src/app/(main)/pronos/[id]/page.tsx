@@ -270,8 +270,10 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       <LiveMatchesHeader
         liveMatches={liveMatches}
         predictions={(allPredictions as Prediction[]) ?? []}
+        members={membersWithLivePoints.map((m: any) => ({ user_id: m.user_id, profiles: m.profiles, total_points: m.total_points ?? 0 }))}
+        myPowerUps={(myPowerUps as any) ?? []}
+        allPowerUps={(allPowerUps as any) ?? []}
         userId={user?.id ?? null}
-        pronoId={prono.id}
       />
 
       <Tabs defaultValue="ranking">
