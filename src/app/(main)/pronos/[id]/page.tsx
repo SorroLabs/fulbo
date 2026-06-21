@@ -126,10 +126,40 @@ export default async function PollaDetailPage({ params, searchParams }: { params
       pointsByUser.set(p.user_id, (pointsByUser.get(p.user_id) ?? 0) + p.points_earned)
     }
   }
+
+  // Tiebreak stats for members tied on points: most exact scores, then % effectiveness.
+  const finishedMatchById = new Map(
+    ((matches as Match[]) ?? []).filter(m => m.status === "finished").map(m => [m.id, m])
+  )
+  const doublePointsSet = new Set(
+    ((allPowerUps as any[]) ?? []).filter(pu => pu.type === "double_points").map(pu => `${pu.user_id}:${pu.match_id}`)
+  )
+  const exactByUser = new Map<string, number>()
+  const maxPtsByUser = new Map<string, number>()
+  for (const p of (allPredictions ?? []) as any[]) {
+    const match = finishedMatchById.get(p.match_id)
+    if (!match) continue
+    const base = match.phase === "groups" ? 10 : 20
+    const hasDouble = doublePointsSet.has(`${p.user_id}:${p.match_id}`)
+    maxPtsByUser.set(p.user_id, (maxPtsByUser.get(p.user_id) ?? 0) + (hasDouble ? base * 2 : base))
+    if (p.home_score === match.home_score && p.away_score === match.away_score) {
+      exactByUser.set(p.user_id, (exactByUser.get(p.user_id) ?? 0) + 1)
+    }
+  }
+
   const membersWithLivePoints = (members ?? [])
     .filter((m: any) => m.is_active !== false)
     .map((m: any) => ({ ...m, total_points: pointsByUser.get(m.user_id) ?? 0 }))
-    .sort((a: any, b: any) => b.total_points - a.total_points)
+    .sort((a: any, b: any) => {
+      if (b.total_points !== a.total_points) return b.total_points - a.total_points
+      const exactDiff = (exactByUser.get(b.user_id) ?? 0) - (exactByUser.get(a.user_id) ?? 0)
+      if (exactDiff !== 0) return exactDiff
+      const maxA = maxPtsByUser.get(a.user_id) ?? 0
+      const maxB = maxPtsByUser.get(b.user_id) ?? 0
+      const effA = maxA > 0 ? a.total_points / maxA : 0
+      const effB = maxB > 0 ? b.total_points / maxB : 0
+      return effB - effA
+    })
 
   // Previous rank map from second-to-last snapshot (snapshots ordered ascending)
   const snapshotList = (pronoSnapshots ?? []) as any[]
