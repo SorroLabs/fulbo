@@ -250,7 +250,12 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
     for (const phase of PHASE_ORDER) {
       const phaseMatches = byPhase[phase] ?? []
       if (!phaseMatches.length) continue
-      if (phase !== "groups" && phaseMatches.every(m => m.status === "upcoming")) continue
+      if (phase !== "groups" && phaseMatches.every(m => m.status === "upcoming")) {
+        const idx = PHASE_ORDER.indexOf(phase)
+        const prevPhase = PHASE_ORDER.slice(0, idx).reverse().find(ph => matches.some(m => m.phase === ph)) ?? null
+        const prevDone = !prevPhase || matches.filter(m => m.phase === prevPhase).every(m => m.status === "finished")
+        if (!prevDone) continue
+      }
       if (phase === "groups") {
         const byFechaMap = new Map<number, Match[]>()
         for (const m of phaseMatches) {
@@ -655,7 +660,12 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
         {/* Open / live matches by phase */}
         {PHASE_ORDER.filter(p => {
           if (!byPhase[p]?.length) return false
-          if (p !== "groups" && byPhase[p].every(m => m.status === "upcoming")) return false
+          if (p !== "groups" && byPhase[p].every(m => m.status === "upcoming")) {
+            const idx = PHASE_ORDER.indexOf(p)
+            const prevPhase = PHASE_ORDER.slice(0, idx).reverse().find(ph => matches.some(m => m.phase === ph)) ?? null
+            const prevDone = !prevPhase || matches.filter(m => m.phase === prevPhase).every(m => m.status === "finished")
+            if (!prevDone) return false
+          }
           return true
         }).map(phase => (
           <div key={phase} className="space-y-4">
