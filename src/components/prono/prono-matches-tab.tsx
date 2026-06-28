@@ -684,9 +684,10 @@ export function PronoMatchesTab({ matches, members, predictions, userId, pronoId
               )
             ) : (
               <div>
-                <h3 className="font-bold text-lg mb-3">
+                <h3 className="font-bold text-lg mb-1">
                   <Badge variant="outline" className="text-primary border-primary/30">{PHASE_LABELS[phase]}</Badge>
                 </h3>
+                <p className="text-xs text-muted-foreground mb-3">Los pronósticos serán tenidos en cuenta hasta el minuto 120 en caso de prórroga.</p>
                 {renderSection(byPhase[phase])}
               </div>
             )}
