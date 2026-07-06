@@ -84,9 +84,16 @@ function ScenarioCalculator({ match, members, preds, currentRanking, userId, all
           : 0
         // Apply double_points
         if (userPus.has("double_points") && gained > 0) gained *= 2
-        // Apply wildcard: if 0 pts, grant base resultado points
-        if (userPus.has("wildcard") && gained === 0 && pred != null) {
-          gained = 5 * (match.phase === "groups" ? 1 : 2)
+        // Apply wildcard: if result wrong, guarantee minimum resultado points
+        if (userPus.has("wildcard") && pred != null) {
+          const resultCorrect = (
+            (pred.home_score > pred.away_score && h > a) ||
+            (pred.home_score < pred.away_score && h < a) ||
+            (pred.home_score === pred.away_score && h === a)
+          )
+          if (!resultCorrect) {
+            gained = Math.max(gained, 5 * (match.phase === "groups" ? 1 : 2))
+          }
         }
         return { ...m, gained, projected: m.total_points + gained, currentRank: i + 1 }
       })
