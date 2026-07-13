@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Star, LayoutGrid } from "lucide-react"
+import { Trophy, Star, LayoutGrid, GitBranch } from "lucide-react"
 import { GroupsView } from "@/components/competition/groups-view"
+import { BracketView } from "@/components/competition/bracket-view"
 import type { Match } from "@/types"
 
 const SPECIAL_LABELS: Record<string, { label: string; emoji: string }> = {
@@ -20,16 +21,20 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: competition }, { data: matches }] = await Promise.all([
+  const [{ data: competition }, { data: matches }, { data: knockoutMatches }] = await Promise.all([
     supabase.from("competitions").select("*").eq("id", id).single(),
     supabase.from("matches").select("*").eq("competition_id", id)
       .not("home_team", "like", "Ganador%")
+      .order("match_date"),
+    supabase.from("matches").select("*").eq("competition_id", id)
+      .neq("phase", "groups")
       .order("match_date"),
   ])
 
   if (!competition) notFound()
 
   const matchList = (matches as Match[]) ?? []
+  const bracketMatches = (knockoutMatches as Match[]) ?? []
   const totalMatches = matchList.length
   const finishedMatches = matchList.filter(m => m.status === "finished").length
   const liveMatches = matchList.filter(m => m.status === "live").length
@@ -92,6 +97,11 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           <TabsTrigger value="groups" className="rounded-full gap-2">
             <LayoutGrid className="h-4 w-4" /> Grupos
           </TabsTrigger>
+          {bracketMatches.length > 0 && (
+            <TabsTrigger value="bracket" className="rounded-full gap-2">
+              <GitBranch className="h-4 w-4" /> Fase Final
+            </TabsTrigger>
+          )}
           {hasOfficialAnswers && (
             <TabsTrigger value="specials" className="rounded-full gap-2">
               <Star className="h-4 w-4" /> Resultados especiales
@@ -102,6 +112,12 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
         <TabsContent value="groups" className="mt-6">
           <GroupsView matches={matchList} />
         </TabsContent>
+
+        {bracketMatches.length > 0 && (
+          <TabsContent value="bracket" className="mt-6">
+            <BracketView matches={bracketMatches} />
+          </TabsContent>
+        )}
 
         {hasOfficialAnswers && (
           <TabsContent value="specials" className="mt-6">
