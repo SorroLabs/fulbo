@@ -41,6 +41,7 @@ export interface Match {
   phase: "groups" | "round_of_32" | "round_of_16" | "quarterfinals" | "semifinals" | "final" | "third_place"
   group_name: string | null
   status: "upcoming" | "live" | "finished"
+  bracket_slot: number | null
   created_at: string
 }
 

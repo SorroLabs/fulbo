@@ -243,7 +243,12 @@ export function BracketView({ matches }: { matches: Match[] }) {
   }
 
   for (const phase of KNOCKOUT_PHASES) {
-    byPhase[phase].sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+    byPhase[phase].sort((a, b) => {
+      const aSlot = a.bracket_slot ?? Infinity
+      const bSlot = b.bracket_slot ?? Infinity
+      if (aSlot !== bSlot) return aSlot - bSlot
+      return new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+    })
   }
 
   const hasR32 = byPhase.round_of_32.length > 0
